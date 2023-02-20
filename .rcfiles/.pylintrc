@@ -1,0 +1,71 @@
+[MAIN]
+init-hook='import sys; sys.path.append(".")'
+
+# Specify a score threshold to be exceeded before program exits with error.
+fail-under=10.0
+
+# Skip all the file names except .py and sandbox.
+# The regex matches against base names, not paths.
+ignore-patterns=
+  ^.*\.[^(?:py)],
+  ^sandbox.*,
+  ^Dockerfile.*
+
+# Suppress the following check errors
+disable=
+  fixme,
+  cyclic-import,
+  protected-access,
+  missing-docstring,
+  arguments-renamed,
+  wrong-import-order,
+  too-few-public-methods,
+  relative-beyond-top-level,
+
+
+[FORMAT]
+# Maximum number of characters on a single line.
+max-line-length=120
+
+# Regexp for a line that is allowed to be longer than the limit.
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+
+
+[VARIABLES]
+# Tells whether we should check for unused import in __init__ files.
+init-import=no
+
+# A regular expression matching the name of dummy variables (i.e. expectedly not used).
+dummy-variables-rgx=_$|dummy
+
+# Tells whether unused global variables should be treated as a violation.
+allow-global-unused-variables=yes
+
+
+[BASIC]
+# Naming style matching correct names.
+class-const-naming-style=UPPER_CASE
+attr-naming-style=snake_case
+method-naming-style=snake_case
+function-naming-style=snake_case
+argument-naming-style=snake_case
+class-attribute-naming-style=any
+
+
+[STRING]
+# This flag controls whether inconsistent-quotes generates a warning when the
+# character used as a quote delimiter is used inconsistently within a module.
+check-quote-consistency=yes
+
+[SIMILARITIES]
+# Minimum lines number of a similarity.
+min-similarity-lines = 20
+
+# Ignore comments when computing similarities.
+ignore-comments = yes
+
+# Ignore docstrings when computing similarities.
+ignore-docstrings = yes
+
+# Ignore imports when computing similarities.
+ignore-imports = yes

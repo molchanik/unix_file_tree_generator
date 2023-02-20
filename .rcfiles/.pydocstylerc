@@ -1,0 +1,7 @@
+# https://www.pydocstyle.org/en/stable/usage.html#in-file-configuration
+
+[pydocstyle]
+match = .*\.py
+inherit = false
+ignore-decorators = true
+ignore = D205,D203,D107,D105,D104,D212,D102,D413,D407,D411,D405

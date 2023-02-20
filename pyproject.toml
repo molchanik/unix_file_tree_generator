@@ -1,0 +1,192 @@
+[tool.poetry]
+name = "gen"
+version = "0.1.11"
+homepage = "https://gitlab.alertinnovation.com/embd/automation/kite"
+description = "Keen Integration Testing Environment. A testing framework for Bot 2.0, built on top of PyTest."
+readme = "README.md"
+license = "Proprietary"
+
+authors = [
+    "Artem Krutalevich <CN-EPM-akrutalevich@alertinnovation.com>",
+    "Yauheni Chekan <CN-EPM-ychekan@alertinnovation.com>",
+]
+
+packages = [
+    { include = "gen", from = "src" }
+]
+
+[tool.poetry.dependencies]
+# Python interpreter version
+python = "^3.11"
+# Python dependencies versions
+PyYAML = "^6.0"                 # https://pypi.org/project/PyYAML/
+bandit = "^1.7"                 # https://pypi.org/project/bandit/
+black = "^23.1"                 # https://pypi.org/project/black/
+certifi = "^2022.12"            # https://pypi.org/project/certifi/
+coverage = "^7.1"               # https://pypi.org/project/coverage/
+cryptography = "^39.0"          # https://pypi.org/project/cryptography/
+delayed-assert = "^0.3"         # https://pypi.org/project/delayed-assert/
+dohq-artifactory = "^0.8"       # https://pypi.org/project/dohq-artifactory/
+fabric2 = "^3.0"                # https://pypi.org/project/fabric2/
+icmplib = "^3.0"                # https://pypi.org/project/icmplib/
+ipython = "^8.10"               # https://pypi.org/project/ipython/
+isort = "^5.12"                 # https://pypi.org/project/isort/
+lxml = "^4.9"                   # https://pypi.org/project/lxml/
+mypy = "^1.0"                   # https://pypi.org/project/mypy/
+numpy = "^1.24"                 # https://pypi.org/project/numpy/
+pandas = "^1.5"                 # https://pypi.org/project/pandas/
+paramiko = "^3.0"               # https://pypi.org/project/paramiko/
+pre-commit = "^3.0"             # https://pypi.org/project/pre-commit/
+pydocstyle = "^6.3"             # https://pypi.org/project/pydocstyle/
+pylint = "^2.16"                # https://pypi.org/project/pylint/
+pylint-gitlab = "^1.2"          # https://pypi.org/project/pylint-gitlab/
+pyserial = "^3.5"               # https://pypi.org/project/pyserial/
+pytest = "^7.2"                 # https://pypi.org/project/pytest/
+pytest-cov = "^4.0"             # https://pypi.org/project/pytest-cov/
+pytest-env = "^0.8"             # https://pypi.org/project/pytest-env/
+pytest-html = "^3.2"            # https://pypi.org/project/pytest-html/
+pytest-report = "^0.2"          # https://pypi.org/project/pytest-report/
+pytest-testrail-e2e = "^2.2"    # https://pypi.org/project/pytest-testrail-e2e/
+python-dotenv = "^0.21"         # https://pypi.org/project/python-dotenv/
+requests = "^2.28"              # https://pypi.org/project/requests/
+ruff = "^0.0"                   # https://pypi.org/project/ruff/
+shellcheck-py = "^0.9"          # https://pypi.org/project/shellcheck-py/
+telnetlib3 = "^2.0"             # https://pypi.org/project/telnetlib3/
+testrail-api = "^1.11"          # https://pypi.org/project/testrail-api/
+types-PyYAML = "^6.0"           # https://pypi.org/project/types-PyYAML/
+types-paramiko = "^3.0"         # https://pypi.org/project/types-paramiko/
+types-requests = "^2.28"        # https://pypi.org/project/types-requests/
+types-setuptools = "^67.3"      # https://pypi.org/project/types-setuptools/
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+include = '\.pyi?$'
+line-length = 120
+skip-magic-trailing-comma = true
+skip-string-normalization = true
+target-version = ["py311"]
+
+# https://pycqa.github.io/isort/docs/configuration/options.html
+[tool.isort]
+case_sensitive = true
+combine_as_imports = true
+lexicographical = true
+line_length = 120
+lines_after_imports = 2
+profile = "black"
+src_paths = ["src", "test"]
+
+# https://github.com/charliermarsh/ruff#reference
+[tool.ruff]
+#fix-only = true
+fix = true
+line-length = 120
+target-version = "py311"
+
+select = [
+    "A", # flake8-builtins
+    "ANN", # flake8-annotations
+    "ARG", # flake8-unuseed-arguments
+    "B", # flake8-bugbear
+    "BLE", # flake8-blind-except
+    "C4", # flake8-comprehesions
+    "C90", # mccabre
+    "D", # pydocstyle - RUFF bugs
+    "E", # pycodestyle
+    "EM", # flake8-errmsg
+    "F", # pyflakes
+    "FBT", # flake8-boolean-trap
+    # "I", # isort - RUFF does not support 2 newlines after imports as normal isort
+    "N", # flake8-naming
+    "PLC", # pylint
+    "PLE", # pylint
+    "PLR", # pylint
+    "PLW", # pylint
+    "Q", # flake8-quotes
+    "RET", # flake8-return
+    "RUF", # ruff-specific
+    "S", # flake8-bandit
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "UP", # pyupgrade
+    "W", # pycodestyle
+    "YTT", # flake8-2020
+]
+ignore = [
+    "A003", # Class attribute is shadowing a python builtin
+    "ANN001", # Missing type annotation for function argument
+    "ANN101", # Missing type annotation for `self`
+    "ANN102", # Missing type annotation for `mcs` in classmethod
+    "ARG002", # Unused method argument
+    "D102", # Missing docstring in public method
+    "D105", # Missing docstring in magic method
+    "D107", # Missing docstring in `__init__`
+    "D203", # 1 blank line required before class docstring
+    "D205", # 1 blank line required between summary line and description
+    "D212", # Multi-line docstring summary should start at the first line
+    "N804", # First argument of a class method should be named `cls`
+    "N818", # Exception name should be named with an Error suffix
+    "PLR0913", # Too many arguments to function call
+    "PLR2004", # Magic value used in comparison, consider replacing 15 with a constant variable
+    "Q000", # Single quotes found but double quotes preferred
+]
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+unfixable = [
+    "F401", # Never try to fix `F401` (unused imports).
+]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.mccabe]
+max-complexity = 15
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = [
+    "E402", # Ignore `E402` (import violations) in all `__init__.py` files
+    "F401" # Ignore `F401` (unused imports) in all `__init__.py` files
+]
+"test_*.py" = [
+    "ARG001", # Unused function argument. Fixtures can be context patches.
+    "S101", # Use of `assert` detected. Tests use asserts.
+]
+"*test.py" = [
+    "ARG001", # Unused function argument. Fixtures can be context patches.
+    "S101", # Use of `assert` detected. Tests use asserts.
+]
+
+[tool.ruff.flake8-quotes]
+avoid-escape = true
+docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "parents"
