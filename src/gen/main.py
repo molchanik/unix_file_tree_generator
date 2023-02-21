@@ -1,14 +1,16 @@
+#!/usr/local/bin/python3
+"""File contain main logic for creating file tree."""
 import argparse
 import datetime
 import sys
 from random import seed
 from time import time
 
-from arg_parser import TreeGenArgParserValidator
-from logger_util import logger
-from main_txt_msgs import HelpMsg
-from main_utils import add_input_args_to_json_report
-from tree_gen import TreeGenerator
+from gen.arg_parser import TreeGenArgParserValidator
+from gen.logger_util import logger
+from gen.main_txt_msgs import HelpMsg
+from gen.main_utils import add_input_args_to_json_report
+from gen.tree_gen import TreeGenerator
 
 
 CURRENT_TIME = datetime.datetime.now()
@@ -45,7 +47,7 @@ if __name__ == '__main__':
     CURRENT_TIME = datetime.datetime.fromtimestamp(args.default_time) if args.default_time is not None else CURRENT_TIME
     args.default_time = int(CURRENT_TIME.timestamp()) if args.default_time is None else args.default_time
 
-    command_line_args = ' '.join(sys.argv[1:])
+    COMMAND_LINE_ARGS = ' '.join(sys.argv[1:])
     seed_val = int(time()) if args.seed is None else int(args.seed)
     seed(seed_val, version=1)
 
@@ -70,11 +72,11 @@ if __name__ == '__main__':
             random=True,
         )
         res_dir = tree.generate_tree()
-        thlc = res_dir.total_hard_links_count
-        tfc = res_dir.total_files_count
-        tsc = res_dir.total_symlinks_count
+        total_hard_links_count = int(res_dir.total_hard_links_count)
+        total_files_count = int(res_dir.total_files_count)
+        total_symlinks_count = int(res_dir.total_symlinks_count)
         end = time()
-        logger.info(
+        log = (
             f'It took {round(end - start, 0)} sec to make content in '
             f'{res_dir.name} with the following parameters:\ntree_depth='
             f'{args.tree_depth}\nrandom seed={seed_val}\n'
@@ -85,19 +87,20 @@ if __name__ == '__main__':
             f'max_files_count={args.max_files_count}, '
             f'hard links={args.hard_links_count} '
             f'symlinks={args.sym_links_count}\n'
-            f'Have been created:\nFiles(including symlinks): {tfc}\n'
+            f'Have been created:\nFiles(including symlinks): {total_files_count}\n'
             f'Dirs: {res_dir.total_sub_dirs_count + 1}\n'
-            f'Hard links: {thlc}\n'
-            f'Sym links: {tsc}\n'
-            f'Files + Hard links + Symlinks: {(thlc + tfc)}\n'
+            f'Hard links: {total_hard_links_count}\n'
+            f'Sym links: {total_symlinks_count}\n'
+            f'Files + Hard links + Symlinks: {(total_hard_links_count + total_files_count)}\n'
             f'Total entries: {res_dir.total_entries + 1}\n'
             f'Total size of all files: {res_dir.total_size_all_files}'
         )
+        logger.info(log)
     else:
         num_of_created_dirs = validator.expected_tree_dirs_count()
         num_of_created_files = validator.expected_tree_files_count()
-        logger.info(f'\nNumber of directories to be created in the tree: {num_of_created_dirs}')
-        logger.info(f'Number of files to be created in the tree: {num_of_created_files}\n')
+        logger.info('Number of directories to be created in the tree: %s\n', num_of_created_dirs)
+        logger.info('Number of files to be created in the tree: %s\n', num_of_created_files)
         start = time()
         tree = TreeGenerator(
             dest=args.dest,
@@ -116,10 +119,10 @@ if __name__ == '__main__':
 
         res_dir = tree.generate_tree()
         end = time()
-        thlc = res_dir.total_hard_links_count
-        tfc = res_dir.total_files_count
-        tsc = res_dir.total_symlinks_count
-        logger.info(
+        total_hard_links_count = int(res_dir.total_hard_links_count)
+        total_files_count = int(res_dir.total_files_count)
+        total_symlinks_count = int(res_dir.total_symlinks_count)
+        log = (
             f'It took {round(end - start, 0)} sec to make content in '
             f'{res_dir.name} with the following parameters:\ntree_depth='
             f'{args.tree_depth}, dirs_count={args.dirs_count}, '
@@ -128,13 +131,14 @@ if __name__ == '__main__':
             f'symlinks={args.sym_links_count}\n'
             f'random seed={seed_val}\n'
             f'initial timestamp={args.default_time}\n\n'
-            f'Have been created:\nFiles(including symlinks): {tfc}\n'
+            f'Have been created:\nFiles(including symlinks): {total_files_count}\n'
             f'Dirs: {res_dir.total_sub_dirs_count + 1}\n'
-            f'Hard links: {thlc}\n'
-            f'Sym links: {tsc}\n'
-            f'Files + Hard links + Symlinks: {(thlc + tfc)}\n'
+            f'Hard links: {total_hard_links_count}\n'
+            f'Sym links: {total_symlinks_count}\n'
+            f'Files + Hard links + Symlinks: {(total_hard_links_count + total_files_count)}\n'
             f'Total entries: {res_dir.total_entries + 1}\n'
             f'Total size of all files: {res_dir.total_size_all_files}'
         )
+        logger.info(log)
 
-    add_input_args_to_json_report(tree.full_report_path, command_line_args, args.default_time, seed_val)
+    add_input_args_to_json_report(tree.full_report_path, COMMAND_LINE_ARGS, args.default_time, seed_val)

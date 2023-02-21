@@ -1,4 +1,4 @@
-"""This file contains some help utils."""
+"""File contains some help utils."""
 import string
 from datetime import datetime, timedelta
 from os import chown, link, path, stat, symlink, utime
@@ -6,10 +6,9 @@ from pwd import getpwnam
 from random import choice, randint
 from threading import Lock
 from time import mktime
-from typing import Tuple
 
-from logger_util import logger
-from node import Dir, SymLink
+from gen.logger_util import logger
+from gen.node import Directory, SymLink
 
 
 START_PATH = path.dirname(__file__)
@@ -56,13 +55,12 @@ def get_random_timestamp(start_time: int) -> datetime:
 
     :return:    datetime stamp
     """
-    time_stamp = datetime.fromtimestamp(start_time) - timedelta(
+    return datetime.fromtimestamp(start_time) - timedelta(
         minutes=randint(*MINS_DELTA), hours=randint(*HOURS_DELTA), days=randint(*DAYS_DELTA)
     )
-    return time_stamp
 
 
-def make_hard_link(src: str, dst: str):
+def make_hard_link(src: str, dst: str) -> None:
     """
     Make hard link.
 
@@ -70,10 +68,10 @@ def make_hard_link(src: str, dst: str):
     :param dst:    destination file path
     """
     link(src, dst)
-    logger.debug(f'Has been created hard link: {dst}')
+    logger.debug('Has been created hard link: %s', dst)
 
 
-def make_symlink(src: str, sym_link: SymLink, owner: str, atime: datetime, mtime: datetime):
+def make_symlink(src: str, sym_link: SymLink, owner: str, atime: datetime, mtime: datetime) -> None:
     """
     Make symlink.
 
@@ -84,7 +82,7 @@ def make_symlink(src: str, sym_link: SymLink, owner: str, atime: datetime, mtime
     :param mtime:       timestamp to modify file modified timestamp
     """
     target_is_dir = False
-    if isinstance(sym_link.file_obj, Dir):
+    if isinstance(sym_link.file_obj, Directory):
         target_is_dir = True
         sym_link.file_obj = {
             'name': sym_link.file_obj.name,
@@ -101,4 +99,4 @@ def make_symlink(src: str, sym_link: SymLink, owner: str, atime: datetime, mtime
     own_uid, own_gid = get_user_ids(owner)
     chown(dst, own_uid, own_gid, follow_symlinks=False)
     sym_link.owner = owner
-    logger.debug(f'Has been created symlink: {dst}, owner {owner}')
+    logger.debug('Has been created symlink: %s, owner %s', dst, owner)

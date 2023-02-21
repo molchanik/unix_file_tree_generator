@@ -1,7 +1,9 @@
-"""This file contains texts for main level of program."""
+"""File contains texts for main level of program."""
 
 
 class HelpMsg:
+    """Container for text messages."""
+
     DESCRIPTION = """
     This script is designed to generate a directory tree and files of different sizes, you can set
      the depth of the file tree, the number of files in each directory, and the number of
@@ -9,8 +11,8 @@ class HelpMsg:
     There are 2 ways to generate a tree:\n
     1: Strictly set the number of directories and files at
     each level of the tree.\n
-    --dest ./ --tree_name Test_tree --tree_depth 3 --dirs_count 1 --files_count 1000 --hard_links_count 100
-    --owners root admin --file_sizes large medium small\n
+    --dest ./ --tree_name Test_tree --tree_depth 3 --dirs_count 1 --files_count 1000
+    --hard_links_count 100 --owners root admin --file_sizes large medium small\n
     2: Use the --random key and set the range of the number
     of directories and files per tree level.\n
     --dest /home/ --tree_name Test_tree --tree_depth 3

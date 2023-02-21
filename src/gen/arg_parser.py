@@ -1,9 +1,9 @@
-"""This file contains custom Argument Parser."""
+"""File contains custom TreeGenArgParserValidator."""
 import sys
 from os import getlogin
 
-from logger_util import logger
-from main_utils import sys_exit
+from gen.logger_util import logger
+from gen.main_utils import sys_exit
 
 
 class TreeGenArgParserValidator:
@@ -12,7 +12,7 @@ class TreeGenArgParserValidator:
     def __init__(self, arguments) -> None:
         self.arguments = arguments
 
-    def validate_args(self):
+    def validate_args(self) -> None:
         """Check arguments to generate file tree."""
         logger.debug('Validating passed arguments.')
         if self.arguments.tree_depth < 1:
@@ -65,24 +65,21 @@ class TreeGenArgParserValidator:
         if self.arguments.tree_name.startswith('/'):
             self.arguments.tree_name = self.arguments.tree_name.lstrip('/')
             logger.warning(
-                f'Warning: The value of the "tree_name" parameter has been ' f'changed to {self.arguments.tree_name}'
+                'Warning: The value of the "tree_name" parameter has been changed to %s', self.arguments.tree_name
             )
 
-    def expected_tree_dirs_count(self):
+    def expected_tree_dirs_count(self) -> int:
         """Get the number of directories to be created."""
         if self.arguments.dirs_count > 1:
-            result = int(
+            return int(
                 ((self.arguments.dirs_count ** (self.arguments.tree_depth + 1)) - 1) / (self.arguments.dirs_count - 1)
             )
-        else:
-            result = self.arguments.dirs_count * (self.arguments.tree_depth + 1)
-        return result
+        return self.arguments.dirs_count * (self.arguments.tree_depth + 1)
 
-    def expected_tree_files_count(self):
+    def expected_tree_files_count(self) -> int:
         """Get the number of files to be created."""
-        result = (
+        return (
             self.expected_tree_dirs_count() * self.arguments.files_count
             + self.arguments.hard_links_count
             + self.arguments.sym_links_count
         )
-        return result

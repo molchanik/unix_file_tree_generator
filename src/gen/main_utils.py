@@ -1,10 +1,10 @@
-"""This file contains utils for the main function."""
+"""File contains utils for the main function."""
 import json
 import sys
 from os import path
 from shutil import rmtree
 
-from logger_util import logger
+from gen.logger_util import logger
 
 
 class CleanUp:
@@ -17,14 +17,14 @@ class CleanUp:
         """Check is tree exist."""
         return path.exists(self.tree_full_path)
 
-    def remove_tree(self):
+    def remove_tree(self) -> None:
         """Remove file tree."""
         if self.is_tree_exist():
             rmtree(self.tree_full_path)
             print(f'\n{self.tree_full_path} has been removed.')
 
 
-def sys_exit(err_msg: str = 'Unexpected exit!', tree_full_path: str | None = None):
+def sys_exit(err_msg: str = 'Unexpected exit!', tree_full_path: str | None = None) -> None:
     """
     Stop process with error message.
 
@@ -38,7 +38,7 @@ def sys_exit(err_msg: str = 'Unexpected exit!', tree_full_path: str | None = Non
     sys.exit()
 
 
-def add_input_args_to_json_report(full_report_path: str, arguments: str, default_time: int, seed_value: int):
+def add_input_args_to_json_report(full_report_path: str, arguments: str, default_time: int, seed_value: int) -> None:
     """
     Save the passed parameters to tree json report.
 

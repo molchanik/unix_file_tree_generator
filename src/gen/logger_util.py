@@ -1,4 +1,4 @@
-"""THis file contains logger init."""
+"""File contains logger init."""
 import logging
 import sys
 from datetime import datetime
