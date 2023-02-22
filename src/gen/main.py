@@ -6,11 +6,11 @@ import sys
 from random import seed
 from time import time
 
-from gen.arg_parser import TreeGenArgParserValidator
-from gen.logger_util import logger
-from gen.main_txt_msgs import HelpMsg
-from gen.main_utils import add_input_args_to_json_report
+from gen.common.main_txt_msgs import HelpMsg
 from gen.tree_gen import TreeGenerator
+from gen.utils.arg_parser import TreeGenArgParserValidator
+from gen.utils.logger_util import logger
+from gen.utils.main_utils import add_input_args_to_json_report
 
 
 CURRENT_TIME = datetime.datetime.now()

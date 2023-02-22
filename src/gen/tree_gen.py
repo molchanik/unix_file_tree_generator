@@ -6,11 +6,18 @@ from random import choice, randint, sample
 from threading import Lock
 from time import mktime
 
-from gen.logger_util import logger
-from gen.main_utils import sys_exit
-from gen.node import Directory, File, HardLink, SymLink
-from gen.reporter import JsonTreeReporter
-from gen.utilits import TIME_FORMAT, get_random_timestamp, get_user_ids, make_hard_link, make_symlink, name_generator
+from gen.nodes.node import Directory, File, HardLink, SymLink
+from gen.utils.logger_util import logger
+from gen.utils.main_utils import sys_exit
+from gen.utils.reporter import JsonTreeReporter
+from gen.utils.utilits import (
+    TIME_FORMAT,
+    get_random_timestamp,
+    get_user_ids,
+    make_hard_link,
+    make_symlink,
+    name_generator,
+)
 
 
 START_PATH = path.dirname(__file__)
@@ -115,7 +122,7 @@ class TreeGenerator:
         """
         Get counts for generating nodes.
 
-        :return:    dict with parameters for node generating
+        :return:    dict with parameters for nodes generating
         """
         params = {'dirs_count': int(self.dirs_count), 'files_count': int(self.files_count)}
         if self.random:
@@ -127,7 +134,7 @@ class TreeGenerator:
         """
         Get owners for generating nodes.
 
-        :return:    dict with owners names for node generating
+        :return:    dict with owners names for nodes generating
         """
         return list(sample(self.owners, randint(1, len(self.owners))))
 
@@ -292,7 +299,7 @@ class TreeGenerator:
                 dir_name = f'D{name_generator(self.name_length)}'
                 while dir_name in [dr.name for dr in current_dir.sub_dirs]:
                     dir_name = name_generator(self.name_length)
-                sub_directory = Directory(current_dir.full_path, dir_name, dir_owner, self.owners, [], [], [], [])
+                sub_directory = Directory(current_dir.full_path, dir_name, dir_owner, self.owners)
                 params_for_creating_dirs.append((sub_directory.full_path, sub_directory.owner))
 
                 current_dir._sub_nodes.append(sub_directory)
@@ -382,7 +389,7 @@ class TreeGenerator:
 
         try:
             with ThreadPoolExecutor(max_workers=10) as tread_executor:
-                root_dir = Directory(self.dest, self.name, start_dir_owner, self.owners, [], [], [], [])
+                root_dir = Directory(self.dest, self.name, start_dir_owner, self.owners)
                 if not path.exists(root_dir.full_path):
                     create_dir(root_dir.full_path, start_dir_owner)
 

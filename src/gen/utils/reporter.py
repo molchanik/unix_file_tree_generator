@@ -3,8 +3,8 @@ import json
 from dataclasses import asdict
 from os import path
 
-from gen.logger_util import logger
-from gen.node import Directory
+from gen.nodes.node import Directory
+from gen.utils.logger_util import logger
 
 
 class TreeReporter:

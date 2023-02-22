@@ -4,7 +4,7 @@ import sys
 from os import path
 from shutil import rmtree
 
-from gen.logger_util import logger
+from gen.utils.logger_util import logger
 
 
 class CleanUp:

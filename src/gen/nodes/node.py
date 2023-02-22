@@ -1,10 +1,11 @@
-"""File contains logic of node(Directory, File, etc.) structure."""
+"""File contains logic of nodes(Directory, File, etc.) structure."""
 from __future__ import annotations
 
 import copy
-from collections.abc import Iterator
 from dataclasses import dataclass, field
 from os import path
+
+from gen.nodes.base import EMPTY_NODES, AbstractNode
 
 
 class ProtectedList(list):
@@ -15,45 +16,13 @@ class ProtectedList(list):
 
 
 @dataclass
-class AbstractNode:
-    """Class represents basic node entity params in unix system."""
-
-    dest: str
-    name: str
-    owner: str
-    _sub_nodes: list[AbstractNode] = field(default_factory=list)
-
-    def add_node(self, node: AbstractNode) -> None:
-        """
-        Add AbstractNode instance.
-        :param node:      AbstractNode instance.
-        """
-        self._sub_nodes.append(node)
-
-    def __iter__(self) -> Iterator[AbstractNode]:
-        return iter(self._sub_nodes)
-
-    @property
-    def full_path(self) -> str:
-        """
-        Get full path of a file.
-
-        :return:    full path of file
-        """
-        return path.join(self.dest, self.name)
-
-
-_EMPTY_NODES: list[AbstractNode] = ProtectedList()
-
-
-@dataclass
 class File(AbstractNode):
     """Class represents file entity."""
 
     size: int = field(kw_only=True, default=0)
     atime: str = field(kw_only=True, default='')
     mtime: str = field(kw_only=True, default='')
-    _sub_nodes = _EMPTY_NODES
+    _sub_nodes = ProtectedList
 
 
 @dataclass
@@ -61,7 +30,7 @@ class HardLink(AbstractNode):
     """Class represents hard link entity."""
 
     file_obj: AbstractNode = field(kw_only=True)
-    _sub_nodes = _EMPTY_NODES
+    _sub_nodes = EMPTY_NODES
 
 
 @dataclass
@@ -72,7 +41,7 @@ class SymLink(AbstractNode):
     atime: str = field(kw_only=True, default='')
     mtime: str = field(kw_only=True, default='')
     size: int = field(kw_only=True, default=0)
-    _sub_nodes = _EMPTY_NODES
+    _sub_nodes = EMPTY_NODES
 
 
 @dataclass
@@ -80,7 +49,6 @@ class Directory(AbstractNode):
     """Class represents directory entity."""
 
     possible_owners: list[str] = field(kw_only=True, default_factory=list[str])
-    _sub_nodes: list[AbstractNode] = field(kw_only=False, default_factory=list[AbstractNode])
     sub_dirs: list[Directory] = field(kw_only=False, default_factory=list['Directory'])
     files: list[File] = field(kw_only=False, default_factory=list[File])
     hard_links: list[HardLink] = field(kw_only=False, default_factory=list[HardLink])
@@ -102,35 +70,16 @@ class Directory(AbstractNode):
     total_entries: int = field(kw_only=False, default=0)
     metrics_by_owners: dict = field(kw_only=False, default_factory=dict)
 
-    def __init__(
-        self,
-        dest: str,
-        name: str,
-        owner: str,
-        possible_owners: list[str],
-        sub_dirs: list[Directory],
-        files: list[File],
-        hard_links: list[HardLink],
-        symlinks: list[SymLink],
-    ) -> None:
+    def __init__(self, dest: str, name: str, owner: str, possible_owners: list[str]) -> None:
         """
         Initialize Directory class attributes.
 
         :param dest:        full path to destination start tree folder
         :param name:        name for root tree folder
-        :param sub_dirs:    list of Directory instances
-        :param files:       list of File instances
-        :param hard_links:  list of HardLink instances
-        :param symlinks:    list of SymLink instances
         :param owner:       owner name
         """
         super().__init__(dest, name, owner)
         self.possible_owners = possible_owners
-        self._sub_nodes = []
-        self.sub_dirs = sub_dirs
-        self.files = files
-        self.hard_links = hard_links
-        self.symlinks = symlinks
 
     def __str__(self) -> str:
         return (
@@ -146,7 +95,7 @@ class Directory(AbstractNode):
 
         :return: list of Directory instances
         """
-        return [_ for _ in self._sub_nodes if isinstance(_, Directory)]
+        return list(self.sub_nodes_generator(type_constraint=Directory))
 
     @sub_dirs.setter
     def sub_dirs(self, sub_dir: Directory) -> None:
@@ -156,7 +105,7 @@ class Directory(AbstractNode):
     @property
     def files(self) -> list[File]:
         """Getter method by files."""
-        return [_ for _ in self._sub_nodes if isinstance(_, File)]
+        return list(self.sub_nodes_generator(type_constraint=File))
 
     @files.setter
     def files(self, file: File) -> None:
@@ -166,7 +115,7 @@ class Directory(AbstractNode):
     @property
     def symlinks(self) -> list[SymLink]:
         """Getter method by symlinks."""
-        return [_ for _ in self._sub_nodes if isinstance(_, SymLink)]
+        return list(self.sub_nodes_generator(type_constraint=SymLink))
 
     @symlinks.setter
     def symlinks(self, symlink: SymLink) -> None:
@@ -176,7 +125,7 @@ class Directory(AbstractNode):
     @property
     def hard_links(self) -> list[HardLink]:
         """Getter method by hard links."""
-        return [_ for _ in self._sub_nodes if isinstance(_, HardLink)]
+        return list(self.sub_nodes_generator(type_constraint=HardLink))
 
     @hard_links.setter
     def hard_links(self, hard_link: HardLink) -> None:
@@ -199,20 +148,9 @@ class Directory(AbstractNode):
 
         :return:    count of files
         """
-        fls_count = []
-
-        def get_sub_dirs(directory: Directory) -> None:
-            """
-            Recursive function to count files in subdirectories.
-
-            :param directory:   working directory
-            """
-            for sub_directory in directory.sub_dirs:
-                get_sub_dirs(sub_directory)
-            fls_count.append(directory.current_dir_files_count)
-
-        get_sub_dirs(self)
-        return sum(fls_count)
+        files = self.get_all_nodes_count(type_constraint=File)
+        symlinks = self.get_all_nodes_count(type_constraint=SymLink)
+        return files + symlinks
 
     @property
     def current_dir_files_count(self) -> int:
@@ -221,7 +159,9 @@ class Directory(AbstractNode):
 
         :return:    count of files
         """
-        return len(self.files) + len(self.symlinks)
+        files = self.get_nodes_count(type_constraint=File)
+        symlinks = self.get_nodes_count(type_constraint=SymLink)
+        return files + symlinks
 
     @property
     def sub_dirs_files_count(self) -> int:
@@ -238,21 +178,7 @@ class Directory(AbstractNode):
 
         :return:    list of file objects
         """
-        fls = []
-
-        def get_sub_dirs(directory: Directory) -> None:
-            """
-            Recursive function to get files in subdirectories.
-
-            :param directory:   working directory
-            """
-            for sub_directory in directory.sub_dirs:
-                get_sub_dirs(sub_directory)
-            for file in directory.files:
-                fls.append(file)
-
-        get_sub_dirs(self)
-        return fls
+        return list(self.sub_nodes_generator(recursive=True, type_constraint=File))
 
     @property
     def total_file_size_in_dir(self) -> int:
@@ -272,23 +198,9 @@ class Directory(AbstractNode):
 
         :return:    total size of all files
         """
-        file_sizes = []
-
-        def get_sub_dirs(directory: Directory) -> None:
-            """
-            Recursive function to get file sizes in subdirectories.
-
-            :param directory:   working directory
-            """
-            for sub_directory in directory.sub_dirs:
-                get_sub_dirs(sub_directory)
-            for file in directory.files:
-                file_sizes.append(int(file.size))
-            for sym_link in directory.symlinks:
-                file_sizes.append(int(sym_link.size))
-
-        get_sub_dirs(self)
-        return sum(file_sizes)
+        files_size = sum(_.size for _ in self.sub_nodes_generator(recursive=True, type_constraint=File))
+        symlinks_size = sum(_.size for _ in self.sub_nodes_generator(recursive=True, type_constraint=SymLink))
+        return files_size + symlinks_size
 
     @property
     def sub_directories_files_size(self) -> int:
@@ -297,20 +209,7 @@ class Directory(AbstractNode):
 
         :return:    total size of sub-dirs files
         """
-        file_sizes = []
-
-        def get_sub_dirs(directory: Directory) -> None:
-            """
-            Recursive function to get file sizes in subdirectories.
-
-            :param directory:   working directory
-            """
-            for sub_directory in directory.sub_dirs:
-                get_sub_dirs(sub_directory)
-                file_sizes.append(sub_directory.total_file_size_in_dir)
-
-        get_sub_dirs(self)
-        return sum(file_sizes)
+        return self.total_size_all_files - self.total_file_size_in_dir
 
     @property
     def total_sub_dirs_count(self) -> int:
@@ -319,22 +218,7 @@ class Directory(AbstractNode):
 
         :return:    count of dirs
         """
-        drs_count = []
-
-        def get_sub_dirs(directory: Directory) -> None:
-            """
-            Recursive function to count subdirectories.
-
-            :param directory:   working directory
-            """
-            drs_count.append(directory.name)
-            for sub_directory in directory.sub_dirs:
-                get_sub_dirs(sub_directory)
-
-        for sub_dir in self.sub_dirs:
-            get_sub_dirs(sub_dir)
-
-        return len(drs_count)
+        return self.get_all_nodes_count(type_constraint=Directory) - self.get_nodes_count(type_constraint=Directory)
 
     @property
     def sub_dirs_count(self) -> int:
@@ -343,7 +227,7 @@ class Directory(AbstractNode):
 
         :return:    count of dirs
         """
-        return len(self.sub_dirs)
+        return self.get_nodes_count(type_constraint=Directory)
 
     def get_all_dirs(self) -> list[Directory]:
         """
@@ -351,22 +235,7 @@ class Directory(AbstractNode):
 
         :return:    list of directories objects
         """
-        drs = []
-
-        def get_sub_dirs(directory: Directory) -> None:
-            """
-            Recursive function to get subdirectories.
-
-            :param directory:   working directory
-            """
-            drs.append(directory)
-            for sub_dir in directory.sub_dirs:
-                get_sub_dirs(sub_dir)
-
-        for sub_directory in self.sub_dirs:
-            get_sub_dirs(sub_directory)
-
-        return drs
+        return list(self.sub_nodes_generator(recursive=True, type_constraint=Directory))
 
     @property
     def total_hard_links_count(self) -> int:
@@ -375,20 +244,7 @@ class Directory(AbstractNode):
 
         :return:    count of hard links
         """
-        hard_links_count = []
-
-        def get_sub_dirs(directory: Directory) -> None:
-            """
-            Recursive function to count hard links in subdirectories.
-
-            :param directory:   working directory
-            """
-            for sub_directory in directory.sub_dirs:
-                get_sub_dirs(sub_directory)
-            hard_links_count.append(len(directory.hard_links))
-
-        get_sub_dirs(self)
-        return sum(hard_links_count)
+        return self.get_all_nodes_count(type_constraint=HardLink)
 
     @property
     def total_symlinks_count(self) -> int:
@@ -397,20 +253,7 @@ class Directory(AbstractNode):
 
         :return:    count of symlinks
         """
-        symlinks_count = []
-
-        def get_sub_dirs(directory: Directory) -> None:
-            """
-            Recursive function to count hard links in subdirectories.
-
-            :param directory:   working directory
-            """
-            for sub_directory in directory.sub_dirs:
-                get_sub_dirs(sub_directory)
-            symlinks_count.append(len(directory.symlinks))
-
-        get_sub_dirs(self)
-        return sum(symlinks_count)
+        return self.get_all_nodes_count(type_constraint=SymLink)
 
     @property
     def current_dir_hard_links_count(self) -> int:
@@ -419,7 +262,7 @@ class Directory(AbstractNode):
 
         :return:    count of hard links
         """
-        return len(self.hard_links)
+        return self.get_nodes_count(type_constraint=HardLink)
 
     @property
     def current_dir_symlinks_count(self) -> int:
@@ -428,7 +271,7 @@ class Directory(AbstractNode):
 
         :return:    count of symlinks
         """
-        return len(self.symlinks)
+        return self.get_nodes_count(type_constraint=SymLink)
 
     @property
     def sub_dirs_hard_links_count(self) -> int:
@@ -505,4 +348,4 @@ class Directory(AbstractNode):
 
         :return:    count of entries
         """
-        return self.total_files_count + self.total_hard_links_count + self.total_sub_dirs_count
+        return len(self._sub_nodes)

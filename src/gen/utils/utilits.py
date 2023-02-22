@@ -7,8 +7,8 @@ from random import choice, randint
 from threading import Lock
 from time import mktime
 
-from gen.logger_util import logger
-from gen.node import Directory, SymLink
+from gen.nodes.node import Directory, SymLink
+from gen.utils.logger_util import logger
 
 
 START_PATH = path.dirname(__file__)

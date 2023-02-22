@@ -3,8 +3,8 @@ import sys
 from argparse import Namespace
 from os import getlogin
 
-from gen.logger_util import logger
-from gen.main_utils import sys_exit
+from gen.utils.logger_util import logger
+from gen.utils.main_utils import sys_exit
 
 
 class TreeGenArgParserValidator:
