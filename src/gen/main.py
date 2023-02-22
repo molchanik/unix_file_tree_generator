@@ -72,9 +72,6 @@ if __name__ == '__main__':
             random=True,
         )
         res_dir = tree.generate_tree()
-        total_hard_links_count = int(res_dir.total_hard_links_count)
-        total_files_count = int(res_dir.total_files_count)
-        total_symlinks_count = int(res_dir.total_symlinks_count)
         end = time()
         log = (
             f'It took {round(end - start, 0)} sec to make content in '
@@ -87,11 +84,12 @@ if __name__ == '__main__':
             f'max_files_count={args.max_files_count}, '
             f'hard links={args.hard_links_count} '
             f'symlinks={args.sym_links_count}\n'
-            f'Have been created:\nFiles(including symlinks): {total_files_count}\n'
+            f'Have been created:\nFiles(including symlinks): {res_dir.total_files_count}\n'
             f'Dirs: {res_dir.total_sub_dirs_count + 1}\n'
-            f'Hard links: {total_hard_links_count}\n'
-            f'Sym links: {total_symlinks_count}\n'
-            f'Files + Hard links + Symlinks: {(total_hard_links_count + total_files_count)}\n'
+            f'Hard links: {res_dir.total_hard_links_count}\n'
+            f'Sym links: {res_dir.total_symlinks_count}\n'
+            f'Files + Hard links + Symlinks: '
+            f'{(res_dir.total_hard_links_count + res_dir.total_files_count)}\n'
             f'Total entries: {res_dir.total_entries + 1}\n'
             f'Total size of all files: {res_dir.total_size_all_files}'
         )
@@ -99,7 +97,7 @@ if __name__ == '__main__':
     else:
         num_of_created_dirs = validator.expected_tree_dirs_count()
         num_of_created_files = validator.expected_tree_files_count()
-        logger.info('Number of directories to be created in the tree: %s\n', num_of_created_dirs)
+        logger.info('Number of directories to be created in the tree: %s', num_of_created_dirs)
         logger.info('Number of files to be created in the tree: %s\n', num_of_created_files)
         start = time()
         tree = TreeGenerator(
@@ -119,9 +117,6 @@ if __name__ == '__main__':
 
         res_dir = tree.generate_tree()
         end = time()
-        total_hard_links_count = int(res_dir.total_hard_links_count)
-        total_files_count = int(res_dir.total_files_count)
-        total_symlinks_count = int(res_dir.total_symlinks_count)
         log = (
             f'It took {round(end - start, 0)} sec to make content in '
             f'{res_dir.name} with the following parameters:\ntree_depth='
@@ -131,11 +126,12 @@ if __name__ == '__main__':
             f'symlinks={args.sym_links_count}\n'
             f'random seed={seed_val}\n'
             f'initial timestamp={args.default_time}\n\n'
-            f'Have been created:\nFiles(including symlinks): {total_files_count}\n'
+            f'Have been created:\nFiles(including symlinks): {res_dir.total_files_count}\n'
             f'Dirs: {res_dir.total_sub_dirs_count + 1}\n'
-            f'Hard links: {total_hard_links_count}\n'
-            f'Sym links: {total_symlinks_count}\n'
-            f'Files + Hard links + Symlinks: {(total_hard_links_count + total_files_count)}\n'
+            f'Hard links: {res_dir.total_hard_links_count}\n'
+            f'Sym links: {res_dir.total_symlinks_count}\n'
+            f'Files + Hard links + Symlinks: '
+            f'{(res_dir.total_hard_links_count + res_dir.total_files_count)}\n'
             f'Total entries: {res_dir.total_entries + 1}\n'
             f'Total size of all files: {res_dir.total_size_all_files}'
         )

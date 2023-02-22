@@ -23,7 +23,7 @@ LETTERS = string.ascii_letters + string.digits + JP_LETTERS + CYR_LETTERS
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
-def get_user_ids(username) -> tuple:
+def get_user_ids(username: str) -> tuple:
     """
     Get user UID and GID.
 
@@ -93,9 +93,9 @@ def make_symlink(src: str, sym_link: SymLink, owner: str, atime: datetime, mtime
     symlink(src, dst, target_is_directory=target_is_dir)
     # Workaround the size of the symlink needs to be increased by 2 bytes, a feature of FS
     sym_link.size = stat(dst, follow_symlinks=False).st_size + 2
-    atime = int(mktime(atime.timetuple()))
-    mtime = int(mktime(mtime.timetuple()))
-    utime(dst, (atime, mtime), follow_symlinks=False)
+    converted_atime = int(mktime(atime.timetuple()))
+    converted_mtime = int(mktime(mtime.timetuple()))
+    utime(dst, (converted_atime, converted_mtime), follow_symlinks=False)
     own_uid, own_gid = get_user_ids(owner)
     chown(dst, own_uid, own_gid, follow_symlinks=False)
     sym_link.owner = owner

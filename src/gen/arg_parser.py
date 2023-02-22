@@ -1,5 +1,6 @@
 """File contains custom TreeGenArgParserValidator."""
 import sys
+from argparse import Namespace
 from os import getlogin
 
 from gen.logger_util import logger
@@ -9,7 +10,7 @@ from gen.main_utils import sys_exit
 class TreeGenArgParserValidator:
     """Custom arguments parser validator."""
 
-    def __init__(self, arguments) -> None:
+    def __init__(self, arguments: Namespace) -> None:
         self.arguments = arguments
 
     def validate_args(self) -> None:
@@ -74,11 +75,11 @@ class TreeGenArgParserValidator:
             return int(
                 ((self.arguments.dirs_count ** (self.arguments.tree_depth + 1)) - 1) / (self.arguments.dirs_count - 1)
             )
-        return self.arguments.dirs_count * (self.arguments.tree_depth + 1)
+        return int(self.arguments.dirs_count * (self.arguments.tree_depth + 1))
 
     def expected_tree_files_count(self) -> int:
         """Get the number of files to be created."""
-        return (
+        return int(
             self.expected_tree_dirs_count() * self.arguments.files_count
             + self.arguments.hard_links_count
             + self.arguments.sym_links_count

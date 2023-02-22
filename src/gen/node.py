@@ -5,7 +5,6 @@ import copy
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from os import path
-from typing import Self
 
 
 class ProtectedList(list):
@@ -69,7 +68,7 @@ class HardLink(AbstractNode):
 class SymLink(AbstractNode):
     """Class represents symlink entity."""
 
-    file_obj: AbstractNode = field(kw_only=True)
+    file_obj: AbstractNode | dict = field(kw_only=True)
     atime: str = field(kw_only=True, default='')
     mtime: str = field(kw_only=True, default='')
     size: int = field(kw_only=True, default=0)
@@ -80,12 +79,12 @@ class SymLink(AbstractNode):
 class Directory(AbstractNode):
     """Class represents directory entity."""
 
-    possible_owners: list[str] = field(kw_only=True, default=list[str])
-    _sub_nodes: list[AbstractNode] = field(kw_only=False, default=list[AbstractNode])
-    sub_dirs: list[Directory] = field(kw_only=False, default=list[Self])
-    files: list[File] = field(kw_only=False, default=list[File])
-    hard_links: list[HardLink] = field(kw_only=False, default=list[HardLink])
-    symlinks: list[SymLink] = field(kw_only=False, default=list[SymLink])
+    possible_owners: list[str] = field(kw_only=True, default_factory=list[str])
+    _sub_nodes: list[AbstractNode] = field(kw_only=False, default_factory=list[AbstractNode])
+    sub_dirs: list[Directory] = field(kw_only=False, default_factory=list['Directory'])
+    files: list[File] = field(kw_only=False, default_factory=list[File])
+    hard_links: list[HardLink] = field(kw_only=False, default_factory=list[HardLink])
+    symlinks: list[SymLink] = field(kw_only=False, default_factory=list[SymLink])
     total_files_count: int = field(kw_only=False, default=0)
     current_dir_files_count: int = field(kw_only=False, default=0)
     sub_dirs_files_count: int = field(kw_only=False, default=0)
@@ -101,7 +100,7 @@ class Directory(AbstractNode):
     total_file_size_in_dir: int = field(kw_only=False, default=0)
     sub_directories_files_size: int = field(kw_only=False, default=0)
     total_entries: int = field(kw_only=False, default=0)
-    metrics_by_owners: dict = field(kw_only=False, default=dict)
+    metrics_by_owners: dict = field(kw_only=False, default_factory=dict)
 
     def __init__(
         self,
@@ -109,10 +108,10 @@ class Directory(AbstractNode):
         name: str,
         owner: str,
         possible_owners: list[str],
-        sub_dirs=None,
-        files=None,
-        hard_links=None,
-        symlinks=None,
+        sub_dirs: list[Directory],
+        files: list[File],
+        hard_links: list[HardLink],
+        symlinks: list[SymLink],
     ) -> None:
         """
         Initialize Directory class attributes.
@@ -150,7 +149,7 @@ class Directory(AbstractNode):
         return [_ for _ in self._sub_nodes if isinstance(_, Directory)]
 
     @sub_dirs.setter
-    def sub_dirs(self, sub_dir) -> None:
+    def sub_dirs(self, sub_dir: Directory) -> None:
         """Setter method to add subdirectories."""
         self.add_node(sub_dir)
 
@@ -160,7 +159,7 @@ class Directory(AbstractNode):
         return [_ for _ in self._sub_nodes if isinstance(_, File)]
 
     @files.setter
-    def files(self, file) -> None:
+    def files(self, file: File) -> None:
         """Setter method to add files."""
         self.add_node(file)
 
@@ -170,7 +169,7 @@ class Directory(AbstractNode):
         return [_ for _ in self._sub_nodes if isinstance(_, SymLink)]
 
     @symlinks.setter
-    def symlinks(self, symlink) -> None:
+    def symlinks(self, symlink: SymLink) -> None:
         """Setter method to add symlinks."""
         self.add_node(symlink)
 
@@ -180,7 +179,7 @@ class Directory(AbstractNode):
         return [_ for _ in self._sub_nodes if isinstance(_, HardLink)]
 
     @hard_links.setter
-    def hard_links(self, hard_link) -> None:
+    def hard_links(self, hard_link: HardLink) -> None:
         """Setter method to add hard links."""
         self.add_node(hard_link)
 

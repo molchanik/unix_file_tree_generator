@@ -53,8 +53,8 @@ class TreeGenerator:
         hard_links_count: int = 0,
         default_time: int = 0,
         symlinks_count: int = 0,
-        random: bool = False,
         report_path: str = '',
+        random: bool = False,
     ) -> None:
         """
         Initialize tree generator attributes.
@@ -95,7 +95,7 @@ class TreeGenerator:
         self.owners = owners
         self.random = random
         self.default_time = default_time
-        self.NAME_LENGTH = 2 if self.tree_depth >= 50 else NAME_LENGTH
+        self.name_length = 2 if self.tree_depth >= 50 else NAME_LENGTH
 
     @property
     def full_path(self) -> str:
@@ -111,21 +111,25 @@ class TreeGenerator:
         """Full path to tree report."""
         return f'{path.join(self.report_path, self.name)}_report.json'
 
-    def _gen_level_params(self) -> dict[str, int | str]:
+    def get_node_counts(self) -> dict[str, int]:
         """
-        Parameters of the generated directory.
+        Get counts for generating nodes.
 
-        :return:    dict with parameters for dir generating
+        :return:    dict with parameters for node generating
         """
-        params = {
-            'dirs_count': int(self.dirs_count),
-            'files_count': int(self.files_count),
-            'owners': sample(self.owners, randint(1, len(self.owners))),
-        }
+        params = {'dirs_count': int(self.dirs_count), 'files_count': int(self.files_count)}
         if self.random:
             params['dirs_count'] = randint(self.min_dirs_count, self.max_dirs_count)
             params['files_count'] = randint(self.min_files_count, self.max_files_count)
         return params
+
+    def get_owners(self) -> list[str]:
+        """
+        Get owners for generating nodes.
+
+        :return:    dict with owners names for node generating
+        """
+        return list(sample(self.owners, randint(1, len(self.owners))))
 
     def _gen_file_params(self) -> dict[str, int | str]:
         """
@@ -148,11 +152,11 @@ class TreeGenerator:
         }
 
         file_type = choice(list(file_params['type'].keys()))
-        file_ext = choice(file_params['type'][file_type])
+        file_ext = choice(file_params['type'].get(file_type))
 
         size = choice(self.file_sizes)
-        size = file_params['size'][size]
-        final_size = randint(int(size * 0.7), int(size * 1.3))
+        size = file_params['size'].get(size)
+        final_size = randint(int(float(size) * 0.7), int(float(size) * 1.3))
 
         return {'final_size': final_size, 'file_type': file_ext}
 
@@ -160,12 +164,12 @@ class TreeGenerator:
         """
         Generate files tree.
 
-        :return:    directory object that contains full tree which was created
+        :return:    Directory object that contains full tree which was created
         """
-        start_params = self._gen_level_params()
-        start_dir_owner = choice(start_params['owners'])
-        dirs_count = start_params['dirs_count']
-        files_count = start_params['files_count']
+        start_params = self.get_node_counts()
+        start_dir_owner = choice(self.get_owners())
+        dirs_count = int(start_params['dirs_count'])
+        files_count = int(start_params['files_count'])
 
         def create_file(full_path: str, file_size: int, atime: datetime, mtime: datetime, owner: str) -> None:
             """
@@ -196,9 +200,9 @@ class TreeGenerator:
                     with open(full_path, 'wb') as file:
                         file.seek(file_size - 1)
                         file.write(b'0')
-                    atime = int(mktime(atime.timetuple()))
-                    mtime = int(mktime(mtime.timetuple()))
-                    utime(full_path, (atime, mtime))
+                    converted_atime = int(mktime(atime.timetuple()))
+                    converted_mtime = int(mktime(mtime.timetuple()))
+                    utime(full_path, (converted_atime, converted_mtime))
                     own_uid, own_gid = get_user_ids(owner)
                     chown(full_path, own_uid, own_gid)
                     logger.debug('Has been created file: %s', _full_path)
@@ -206,7 +210,7 @@ class TreeGenerator:
                     chdir(START_PATH)
             except (PermissionError, ValueError, LookupError) as err:
                 logger.error('User %s was selected to create the file', owner)
-                raise SystemExit(err)
+                raise SystemExit(err) from SystemExit
 
         def create_dir(dir_path: str, owner: str) -> None:
             """
@@ -247,13 +251,13 @@ class TreeGenerator:
 
                 for _ in range(int(fls_count)):
                     file_params = self._gen_file_params()
-                    file_owner = choice(self._gen_level_params()['owners'])
+                    file_owner = choice(self.get_owners())
 
-                    file_name = name_generator(NAME_LENGTH)
+                    file_name = name_generator(self.name_length)
                     file_name = f'F{file_name}.{file_params["file_type"]}'
                     while file_name in [fl.name for fl in current_dir.files]:
                         file_params = self._gen_file_params()
-                        file_name = name_generator(NAME_LENGTH)
+                        file_name = name_generator(self.name_length)
                         file_name = f'F{file_name}.{file_params["file_type"]}'
 
                     file_size = int(file_params['final_size'])
@@ -283,13 +287,11 @@ class TreeGenerator:
             """
             params_for_creating_dirs = []
             for _ in range(drs_count):
-                level_parameters = self._gen_level_params()
-                dir_owner = choice(level_parameters['owners'])
+                dir_owner = choice(self.get_owners())
 
-                dir_name = f'D{name_generator(NAME_LENGTH)}'
-                # if current_dir.sub_dirs:
+                dir_name = f'D{name_generator(self.name_length)}'
                 while dir_name in [dr.name for dr in current_dir.sub_dirs]:
-                    dir_name = name_generator(NAME_LENGTH)
+                    dir_name = name_generator(self.name_length)
                 sub_directory = Directory(current_dir.full_path, dir_name, dir_owner, self.owners, [], [], [], [])
                 params_for_creating_dirs.append((sub_directory.full_path, sub_directory.owner))
 
@@ -372,7 +374,7 @@ class TreeGenerator:
                         mtime=mtime.strftime(TIME_FORMAT),
                     )
                     target_dir._sub_nodes.append(sym_link)
-                    owner = choice(self._gen_level_params()['owners'])
+                    owner = choice(self.get_owners())
                     params_for_creating_links.append((target_file.full_path, sym_link, owner, atime, mtime))
 
                 for _ in executor.map(lambda params: make_symlink(*params), params_for_creating_links):
@@ -391,25 +393,26 @@ class TreeGenerator:
                     next_dirs_level = []
 
                     for sub_dir in current_dirs_level:
-                        level_params = self._gen_level_params()
-                        dirs_to_create_count = level_params['dirs_count']
-                        files_to_create_count = level_params['files_count']
+                        nodes_count = self.get_node_counts()
+                        dirs_to_create_count = nodes_count['dirs_count']
+                        files_to_create_count = nodes_count['files_count']
 
-                        create_level(sub_dir, dirs_to_create_count, files_to_create_count, tread_executor)
+                        create_level(sub_dir, int(dirs_to_create_count), int(files_to_create_count), tread_executor)
                         for sub_directory in sub_dir.sub_dirs:
                             next_dirs_level.append(sub_directory)
 
                     current_dirs_level = next_dirs_level.copy()
 
                 for sub_dr in current_dirs_level:
-                    level_params = self._gen_level_params()
-                    files_to_create_count = level_params['files_count']
+                    nodes_count = self.get_node_counts()
+                    files_to_create_count = nodes_count['files_count']
                     create_files_at_level(sub_dr, files_to_create_count, tread_executor)
 
                 create_hard_links_in_tree(root_dir, self.hard_links_count, tread_executor)
                 create_symlinks_in_tree(root_dir, self.symlinks_count, tread_executor)
                 JsonTreeReporter(self.report_path, f'{self.name}_report.json', root_dir).save_report()
-                return root_dir
+            return root_dir
 
         except (SystemExit, InterruptedError, FileNotFoundError, KeyboardInterrupt) as error:
             sys_exit(str(error))
+            return root_dir
