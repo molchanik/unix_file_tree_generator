@@ -31,8 +31,8 @@ class AbstractNode(typing.Generic[T]):
         """Get full path of a file."""
         return path.join(self.path, self.name)
 
-    def sub_nodes_generator(
-        self, type_constraint: type[T] | None = None, recursive: bool = False
+    def iter_sub_nodes(
+        self, *, type_constraint: type[T] | None = None, scan_depth: int = 0
     ) -> typing.Generator[T, None, None]:
         """
         Allow iterating through all sub-nodes either directly or recursively.
@@ -45,8 +45,19 @@ class AbstractNode(typing.Generic[T]):
                 if isinstance(sub_node, type_constraint):
                     yield sub_node
 
-            if recursive:
-                yield from sub_node.sub_nodes_generator(recursive=True, type_constraint=type_constraint)
+            if scan_depth:
+                yield from sub_node.iter_sub_nodes(scan_depth=scan_depth - 1, type_constraint=type_constraint)
 
 
 EMPTY_NODES: list[AbstractNode] = []
+
+
+@dataclass(kw_only=True)
+class AbstractLeafNode(AbstractNode):
+    """Represent a Leaf node base - a node that cannot have sub-nodes."""
+
+    _sub_nodes = EMPTY_NODES
+
+    def add_node(self, node: object) -> typing.NoReturn:
+        """Block adding sub-nodes for a Leaf."""
+        raise TypeError(f'Node type {type(self).__name__} cannot have sub-nodes!')

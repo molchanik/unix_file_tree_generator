@@ -2,67 +2,29 @@
 from __future__ import annotations
 
 import copy
-from collections.abc import Iterator
 from dataclasses import dataclass, field
 from os import path
 from typing import Self
 
-
-class ProtectedList(list):
-    """Protected list class."""
-
-    def append(self, __object: object) -> None:
-        pass
+from gen.nodes.base import AbstractNode, EMPTY_NODES
 
 
-@dataclass
-class AbstractNode:
-    """Class represents basic node entity params in unix system."""
-
-    dest: str
-    name: str
-    owner: str
-    _sub_nodes: list[AbstractNode] = field(default_factory=list)
-
-    def add_node(self, node: AbstractNode) -> None:
-        """
-        Add AbstractNode instance.
-        :param node:      AbstractNode instance.
-        """
-        self._sub_nodes.append(node)
-
-    def __iter__(self) -> Iterator[AbstractNode]:
-        return iter(self._sub_nodes)
-
-    @property
-    def full_path(self) -> str:
-        """
-        Get full path of a file.
-
-        :return:    full path of file
-        """
-        return path.join(self.dest, self.name)
-
-
-_EMPTY_NODES: list[AbstractNode] = ProtectedList()
-
-
-@dataclass
+@dataclass(kw_only=True)
 class File(AbstractNode):
     """Class represents file entity."""
 
     size: int = field(kw_only=True, default=0)
     atime: str = field(kw_only=True, default='')
     mtime: str = field(kw_only=True, default='')
-    _sub_nodes = _EMPTY_NODES
+    _sub_nodes = EMPTY_NODES
 
 
-@dataclass
+@dataclass(kw_only=True)
 class HardLink(AbstractNode):
     """Class represents hard link entity."""
 
-    file_obj: AbstractNode = field(kw_only=True)
-    _sub_nodes = _EMPTY_NODES
+    file_obj: str
+    _sub_nodes = EMPTY_NODES
 
 
 @dataclass
@@ -73,7 +35,7 @@ class SymLink(AbstractNode):
     atime: str = field(kw_only=True, default='')
     mtime: str = field(kw_only=True, default='')
     size: int = field(kw_only=True, default=0)
-    _sub_nodes = _EMPTY_NODES
+    _sub_nodes = EMPTY_NODES
 
 
 @dataclass
