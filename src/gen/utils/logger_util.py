@@ -13,7 +13,7 @@ logger.setLevel(logging.INFO)
 
 console = logging.StreamHandler(stream=sys.stdout)
 console.setLevel('DEBUG')
-console.setFormatter(logging.Formatter('[LINE:%(lineno)d]# %(levelname)-8s[%(asctime)s] %(message)s'))
+console.setFormatter(logging.Formatter('[%(asctime)s] - [LINE:%(lineno)d] - %(levelname)s - %(message)s'))
 logger.addHandler(console)
 
 log_file = logging.FileHandler(global_log, encoding='utf-8')

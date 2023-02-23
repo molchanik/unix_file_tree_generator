@@ -28,18 +28,15 @@ class AbstractNode(typing.Generic[T]):
         return path.join(self.dest, self.name)
 
     def sub_nodes_generator(
-        self, type_constraint: type[T] | None = None, recursive: bool = False
+        self, type_constraint: type[T] | None = None, recursive: bool = False  # noqa: FBT001, FBT002
     ) -> typing.Generator[T, None, None]:
         """
         Allow iterating through all sub-nodes either directly or recursively.
         Allow type constraint for the nodes to limit the lookup results.
         """
         for sub_node in self._sub_nodes:
-            if type_constraint is None:
+            if type_constraint is None or isinstance(sub_node, type_constraint):
                 yield sub_node
-            else:
-                if isinstance(sub_node, type_constraint):
-                    yield sub_node
 
             if recursive:
                 yield from sub_node.sub_nodes_generator(recursive=True, type_constraint=type_constraint)
@@ -54,3 +51,15 @@ class AbstractNode(typing.Generic[T]):
 
 
 EMPTY_NODES: list[AbstractNode] = []
+
+
+@dataclass(kw_only=True)
+class AbstractLeafNode(AbstractNode):
+    """Represent a Leaf node base - a node that cannot have sub-nodes."""
+
+    _sub_nodes = EMPTY_NODES
+
+    def add_node(self, node: object) -> typing.NoReturn:
+        """Block adding sub-nodes for a Leaf."""
+        err = f'Node type {type(self).__name__} cannot have sub-nodes!'
+        raise TypeError(err)

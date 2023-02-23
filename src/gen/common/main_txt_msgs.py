@@ -55,3 +55,4 @@ class HelpMsg:
         ' or the value will be set randomly'
     )
     HELP = 'show usage message'
+    LOG_LEVEL = 'Provide logging level. Example -loglevel debug, default=info'

@@ -5,47 +5,37 @@ import copy
 from dataclasses import dataclass, field
 from os import path
 
-from gen.nodes.base import EMPTY_NODES, AbstractNode
+from gen.nodes.base import AbstractLeafNode, AbstractNode
 
 
-class ProtectedList(list):
-    """Protected list class."""
-
-    def append(self, __object: object) -> None:
-        pass
-
-
-@dataclass
-class File(AbstractNode):
+@dataclass(kw_only=True)
+class File(AbstractLeafNode):
     """Class represents file entity."""
 
-    size: int = field(kw_only=True, default=0)
-    atime: str = field(kw_only=True, default='')
-    mtime: str = field(kw_only=True, default='')
-    _sub_nodes = ProtectedList
+    size: int
+    atime: str
+    mtime: str
 
 
-@dataclass
-class HardLink(AbstractNode):
+@dataclass(kw_only=True)
+class HardLink(AbstractLeafNode):
     """Class represents hard link entity."""
 
     file_obj: AbstractNode = field(kw_only=True)
-    _sub_nodes = EMPTY_NODES
 
 
-@dataclass
-class SymLink(AbstractNode):
+@dataclass(kw_only=True)
+class SymLink(AbstractLeafNode):
     """Class represents symlink entity."""
 
     file_obj: AbstractNode | dict = field(kw_only=True)
-    atime: str = field(kw_only=True, default='')
-    mtime: str = field(kw_only=True, default='')
-    size: int = field(kw_only=True, default=0)
-    _sub_nodes = EMPTY_NODES
+    atime: str
+    mtime: str
+    size: int
 
 
 @dataclass
-class Directory(AbstractNode):
+class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, function-redefined
     """Class represents directory entity."""
 
     possible_owners: list[str] = field(kw_only=True, default_factory=list[str])
@@ -200,7 +190,7 @@ class Directory(AbstractNode):
         """
         files_size = sum(_.size for _ in self.sub_nodes_generator(recursive=True, type_constraint=File))
         symlinks_size = sum(_.size for _ in self.sub_nodes_generator(recursive=True, type_constraint=SymLink))
-        return files_size + symlinks_size
+        return int(files_size) + int(symlinks_size)
 
     @property
     def sub_directories_files_size(self) -> int:

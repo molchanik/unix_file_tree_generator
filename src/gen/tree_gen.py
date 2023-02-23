@@ -41,10 +41,10 @@ BAD_EXTENSIONS = ('', 'a5t3', 'ss', '000', 'Pнr', '世界中')
 NAME_LENGTH = 4
 
 
-class TreeGenerator:
+class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-attributes, too-many-locals
     """Tree generator class."""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-instance-attributes, too-many-arguments
         self,
         name: str,
         dest: str,
@@ -61,7 +61,7 @@ class TreeGenerator:
         default_time: int = 0,
         symlinks_count: int = 0,
         report_path: str = '',
-        random: bool = False,
+        random: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """
         Initialize tree generator attributes.
@@ -167,7 +167,7 @@ class TreeGenerator:
 
         return {'final_size': final_size, 'file_type': file_ext}
 
-    def generate_tree(self) -> Directory:
+    def generate_tree(self) -> Directory:  # noqa: PLR0915, C901
         """
         Generate files tree.
 
@@ -244,6 +244,7 @@ class TreeGenerator:
             chown(dir_path, own_uid, own_gid)
             chdir(START_PATH)
             logger.debug('Has been created directory: %s', _dir_path)
+            _dir_path.strip()
 
         def create_files_at_level(current_dir: Directory, fls_count: int | str, executor: ThreadPoolExecutor) -> None:
             """
@@ -389,6 +390,7 @@ class TreeGenerator:
 
         try:
             with ThreadPoolExecutor(max_workers=10) as tread_executor:
+                logger.info('Start making files %s', datetime.now())
                 root_dir = Directory(self.dest, self.name, start_dir_owner, self.owners)
                 if not path.exists(root_dir.full_path):
                     create_dir(root_dir.full_path, start_dir_owner)
@@ -417,6 +419,7 @@ class TreeGenerator:
 
                 create_hard_links_in_tree(root_dir, self.hard_links_count, tread_executor)
                 create_symlinks_in_tree(root_dir, self.symlinks_count, tread_executor)
+                logger.info('Creating files is done %s', datetime.now())
                 JsonTreeReporter(self.report_path, f'{self.name}_report.json', root_dir).save_report()
             return root_dir
 
