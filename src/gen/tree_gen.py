@@ -279,7 +279,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                         atime=atime.strftime(TIME_FORMAT),
                         mtime=mtime.strftime(TIME_FORMAT),
                     )
-                    current_dir._sub_nodes.append(new_file)
+                    current_dir.add_node(new_file)
                     params_for_creating_files.append((new_file.full_path, file_size, atime, mtime, new_file.owner))
                 # Workaround for ThreadPoolExecutor exception handling
                 for _ in executor.map(lambda params: create_file(*params), params_for_creating_files):
@@ -303,7 +303,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                 sub_directory = Directory(current_dir.full_path, dir_name, dir_owner, self.owners)
                 params_for_creating_dirs.append((sub_directory.full_path, sub_directory.owner))
 
-                current_dir._sub_nodes.append(sub_directory)
+                current_dir.add_node(sub_directory)
             # Workaround for ThreadPoolExecutor exception handling
             for _ in executor.map(lambda params: create_dir(*params), params_for_creating_dirs):
                 pass
@@ -346,7 +346,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                         owner=target_file.owner,
                         dest=target_dir.full_path,
                     )
-                    target_dir._sub_nodes.append(hard_link)
+                    target_dir.add_node(hard_link)
                     params_for_creating_links.append((target_file.full_path, hard_link.full_path))
 
                 for _ in executor.map(lambda params: make_hard_link(*params), params_for_creating_links):
@@ -381,7 +381,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                         atime=atime.strftime(TIME_FORMAT),
                         mtime=mtime.strftime(TIME_FORMAT),
                     )
-                    target_dir._sub_nodes.append(sym_link)
+                    target_dir.add_node(sym_link)
                     owner = choice(self.get_owners())
                     params_for_creating_links.append((target_file.full_path, sym_link, owner, atime, mtime))
 
@@ -390,7 +390,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
 
         try:
             with ThreadPoolExecutor(max_workers=10) as tread_executor:
-                logger.info('Start making files %s', datetime.now())
+                logger.info('Start making files')
                 root_dir = Directory(self.dest, self.name, start_dir_owner, self.owners)
                 if not path.exists(root_dir.full_path):
                     create_dir(root_dir.full_path, start_dir_owner)
@@ -419,7 +419,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
 
                 create_hard_links_in_tree(root_dir, self.hard_links_count, tread_executor)
                 create_symlinks_in_tree(root_dir, self.symlinks_count, tread_executor)
-                logger.info('Creating files is done %s', datetime.now())
+                logger.info('Creating files is done')
                 JsonTreeReporter(self.report_path, f'{self.name}_report.json', root_dir).save_report()
             return root_dir
 

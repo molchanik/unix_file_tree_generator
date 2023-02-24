@@ -87,40 +87,20 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
         """
         return list(self.sub_nodes_generator(type_constraint=Directory))
 
-    @sub_dirs.setter
-    def sub_dirs(self, sub_dir: Directory) -> None:
-        """Setter method to add subdirectories."""
-        self.add_node(sub_dir)
-
     @property
     def files(self) -> list[File]:
         """Getter method by files."""
         return list(self.sub_nodes_generator(type_constraint=File))
-
-    @files.setter
-    def files(self, file: File) -> None:
-        """Setter method to add files."""
-        self.add_node(file)
 
     @property
     def symlinks(self) -> list[SymLink]:
         """Getter method by symlinks."""
         return list(self.sub_nodes_generator(type_constraint=SymLink))
 
-    @symlinks.setter
-    def symlinks(self, symlink: SymLink) -> None:
-        """Setter method to add symlinks."""
-        self.add_node(symlink)
-
     @property
     def hard_links(self) -> list[HardLink]:
         """Getter method by hard links."""
         return list(self.sub_nodes_generator(type_constraint=HardLink))
-
-    @hard_links.setter
-    def hard_links(self, hard_link: HardLink) -> None:
-        """Setter method to add hard links."""
-        self.add_node(hard_link)
 
     @property
     def full_path(self) -> str:
@@ -177,9 +157,9 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
 
         :return:    total size of files
         """
-        files_sum = sum(file.size for file in self.files)
-        sym_links_sum = sum(sym_link.size for sym_link in self.symlinks)
-        return files_sum + sym_links_sum
+        files_sum = sum(file.size for file in self.sub_nodes_generator(type_constraint=File))
+        sym_links_sum = sum(sym_link.size for sym_link in self.sub_nodes_generator(type_constraint=SymLink))
+        return int(files_sum) + int(sym_links_sum)
 
     @property
     def total_size_all_files(self) -> int:
@@ -208,7 +188,10 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
 
         :return:    count of dirs
         """
-        return self.get_all_nodes_count(type_constraint=Directory) - self.get_nodes_count(type_constraint=Directory)
+        nodes_count = 0
+        for _ in self.sub_nodes_generator(recursive=True, type_constraint=Directory):
+            nodes_count += 1
+        return nodes_count
 
     @property
     def sub_dirs_count(self) -> int:
@@ -306,10 +289,10 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
             :param current_dir:   working directory
             """
             sub_dirs.append(current_dir)
-            for sub_directory in current_dir.sub_dirs:
+            for sub_directory in current_dir.sub_nodes_generator(recursive=False, type_constraint=Directory):
                 get_sub_dirs(sub_directory)
 
-        for sub_dir in self.sub_dirs:
+        for sub_dir in self.sub_nodes_generator(recursive=False, type_constraint=Directory):
             get_sub_dirs(sub_dir)
 
         for owner in self.possible_owners:
@@ -320,7 +303,7 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
             metrics[file.owner]['sub_files_size'] += int(file.size)
             metrics[file.owner]['own_files_count'] += 1
             metrics[file.owner]['sub_files_count'] += 1
-        for directory in self.sub_dirs:
+        for directory in self.sub_nodes_generator(recursive=False, type_constraint=Directory):
             metrics[directory.owner]['own_dirs_count'] += 1
 
         for sub_dir in sub_dirs:
@@ -338,4 +321,7 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
 
         :return:    count of entries
         """
-        return len(self._sub_nodes)
+        nodes_count = 0
+        for _ in self.sub_nodes_generator(recursive=True, type_constraint=None):
+            nodes_count += 1
+        return nodes_count

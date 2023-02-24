@@ -1,5 +1,7 @@
 """File contains some help utils."""
+import copy
 import string
+from dataclasses import fields
 from datetime import datetime, timedelta
 from os import chown, link, path, stat, symlink, utime
 from pwd import getpwnam
@@ -100,3 +102,30 @@ def make_symlink(src: str, sym_link: SymLink, owner: str, atime: datetime, mtime
     chown(dst, own_uid, own_gid, follow_symlinks=False)
     sym_link.owner = owner
     logger.debug('Has been created symlink: %s, owner %s', dst, owner)
+
+
+def dataclass_to_dict(obj, dict_factory=dict):  # noqa: ANN201
+    """
+    Convert Directory data class to dict recursively, modified dataclass.asdict method.
+
+    :param obj:             Directory instance
+    :param dict_factory:    builtin type for converting, dict, tuple, list
+    :return:                dictionary
+    """
+    if hasattr(type(obj), '__dataclass_fields__'):
+        result = []
+        for field in fields(obj):
+            if field.name == '_sub_nodes':
+                continue
+            value = dataclass_to_dict(getattr(obj, field.name), dict_factory)
+            result.append((field.name, value))
+        return dict_factory(result)
+    if isinstance(obj, tuple) and hasattr(obj, '_fields'):
+        return type(obj)(*[dataclass_to_dict(v, dict_factory) for v in obj])
+    if isinstance(obj, (list, tuple)):
+        return type(obj)(dataclass_to_dict(v, dict_factory) for v in obj)
+    if isinstance(obj, dict):
+        return type(obj)(
+            (dataclass_to_dict(k, dict_factory), dataclass_to_dict(v, dict_factory)) for k, v in obj.items()
+        )
+    return copy.deepcopy(obj)
