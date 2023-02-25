@@ -188,10 +188,7 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
 
         :return:    count of dirs
         """
-        nodes_count = 0
-        for _ in self.sub_nodes_generator(recursive=True, type_constraint=Directory):
-            nodes_count += 1
-        return nodes_count
+        return sum(1 for _ in self.sub_nodes_generator(recursive=True, type_constraint=Directory))
 
     @property
     def sub_dirs_count(self) -> int:
@@ -321,7 +318,4 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
 
         :return:    count of entries
         """
-        nodes_count = 0
-        for _ in self.sub_nodes_generator(recursive=True, type_constraint=None):
-            nodes_count += 1
-        return nodes_count
+        return sum(1 for _ in self.sub_nodes_generator(recursive=True, type_constraint=None))

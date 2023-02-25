@@ -22,9 +22,6 @@ class TreeGenArgParserValidator:
         if not self.arguments.owners:
             sys_exit(f'Owners have not been set, you can use the current user: {getlogin()}')
 
-        if not self.arguments.report_path:
-            self.arguments.report_path = self.arguments.dest
-
         if self.arguments.random:
             necessary_args = (
                 self.arguments.min_dirs_count,

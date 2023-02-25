@@ -322,71 +322,69 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
             create_dirs_at_level(current_dir, count_of_dirs, tread_exec)
             create_files_at_level(current_dir, count_of_files, tread_exec)
 
-        def create_hard_links_in_tree(root_directory: Directory, count: int, executor: ThreadPoolExecutor) -> None:
+        def create_hard_links_in_tree(
+            count: int, executor: ThreadPoolExecutor, dirs: list[Directory], files: list[File]
+        ) -> None:
             """
             Create hard links in a file tree.
 
-            :param root_directory:    root Directory object
             :param count:             count of hard links for making
             :param executor:          ThreadPoolExecutor for hardlinks creating
+            :param dirs:              list of Directory's
+            :param files:             list of File's
             """
-            all_drs_in_tree = root_directory.get_all_dirs()
-            all_drs_in_tree.append(root_directory)
-            all_files_in_tree = root_directory.get_all_files()
             params_for_creating_links = []
 
-            if count:
-                for num in range(count):
-                    target_dir = choice(all_drs_in_tree)
-                    target_file = choice(all_files_in_tree)
+            for num in range(count):
+                target_dir = dirs[randint(0, len(dirs))]
+                target_file = files[randint(1, len(files))]
 
-                    hard_link = HardLink(
-                        name=f'HL{num}_{target_file.name}',
-                        file_obj=target_file,
-                        owner=target_file.owner,
-                        dest=target_dir.full_path,
-                    )
-                    target_dir.add_node(hard_link)
-                    params_for_creating_links.append((target_file.full_path, hard_link.full_path))
+                hard_link = HardLink(
+                    name=f'HL{num}_{target_file.name}',
+                    file_obj=target_file,
+                    owner=target_file.owner,
+                    dest=target_dir.full_path,
+                )
+                target_dir.add_node(hard_link)
+                params_for_creating_links.append((target_file.full_path, hard_link.full_path))
 
-                for _ in executor.map(lambda params: make_hard_link(*params), params_for_creating_links):
-                    pass
+            for _ in executor.map(lambda params: make_hard_link(*params), params_for_creating_links):
+                pass
 
-        def create_symlinks_in_tree(root_directory: Directory, count: int, executor: ThreadPoolExecutor) -> None:
+        def create_symlinks_in_tree(
+            count: int, executor: ThreadPoolExecutor, dirs: list[Directory], files: list[File]
+        ) -> None:
             """
             Create symlinks in a file tree.
 
-            :param root_directory:    root Directory object
             :param count:             count of hard links for making
             :param executor:          ThreadPoolExecutor for symlinks creating
+            :param dirs:              list of Directory's
+            :param files:             list of File's
             """
-            all_drs_in_tree = root_directory.get_all_dirs()
-            all_drs_in_tree.append(root_directory)
-            all_files_in_tree = root_directory.get_all_files()
             params_for_creating_links = []
 
-            if count:
-                for num in range(count):
-                    target_dir = choice(all_drs_in_tree)
-                    target_file = choice([*all_drs_in_tree, *all_files_in_tree])
+            for num in range(count):
+                target_dir = dirs[randint(0, len(dirs))]
+                target_file = files[randint(1, len(files))] if randint(0, 1) else dirs[randint(0, len(dirs))]
 
-                    atime = get_random_timestamp(self.default_time)
-                    mtime = get_random_timestamp(self.default_time)
-                    sym_link = SymLink(
-                        name=f'SL{num}_{target_file.name}',
-                        file_obj=target_file,
-                        owner='',
-                        dest=target_dir.full_path,
-                        size=0,
-                        atime=atime.strftime(TIME_FORMAT),
-                        mtime=mtime.strftime(TIME_FORMAT),
-                    )
-                    target_dir.add_node(sym_link)
-                    owner = choice(self.get_owners())
-                    params_for_creating_links.append((target_file.full_path, sym_link, owner, atime, mtime))
+                atime = get_random_timestamp(self.default_time)
+                mtime = get_random_timestamp(self.default_time)
+                sym_link = SymLink(
+                    name=f'SL{num}_{target_file.name}',
+                    file_obj=target_file,
+                    owner='',
+                    dest=target_dir.full_path,
+                    size=0,
+                    atime=atime.strftime(TIME_FORMAT),
+                    mtime=mtime.strftime(TIME_FORMAT),
+                )
+                target_dir.add_node(sym_link)
+                owner = choice(self.get_owners())
+                params_for_creating_links.append((target_file.full_path, sym_link, owner, atime, mtime))
 
-                for _ in executor.map(lambda params: make_symlink(*params), params_for_creating_links):
-                    pass
+            for _ in executor.map(lambda params: make_symlink(*params), params_for_creating_links):
+                pass
 
         try:
             with ThreadPoolExecutor(max_workers=10) as tread_executor:
@@ -417,10 +415,15 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                     files_to_create_count = nodes_count['files_count']
                     create_files_at_level(sub_dr, files_to_create_count, tread_executor)
 
-                create_hard_links_in_tree(root_dir, self.hard_links_count, tread_executor)
-                create_symlinks_in_tree(root_dir, self.symlinks_count, tread_executor)
+                create_hard_links_in_tree(
+                    self.hard_links_count, tread_executor, root_dir.get_all_dirs(), root_dir.get_all_files()
+                )
+                create_symlinks_in_tree(
+                    self.symlinks_count, tread_executor, root_dir.get_all_dirs(), root_dir.get_all_files()
+                )
                 logger.info('Creating files is done')
-                JsonTreeReporter(self.report_path, f'{self.name}_report.json', root_dir).save_report()
+                if self.report_path:
+                    JsonTreeReporter(self.report_path, f'{self.name}_report.json', root_dir).save_report()
             return root_dir
 
         except (SystemExit, InterruptedError, FileNotFoundError, KeyboardInterrupt) as error:

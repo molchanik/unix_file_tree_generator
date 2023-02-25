@@ -35,7 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('--owners', nargs='*', default='root admin', help=HelpMsg.OWNERS)
     parser.add_argument('--file_sizes', nargs='*', default='large medium small', help=HelpMsg.FILE_SIZES)
     parser.add_argument('--tree_name', default='Test_tree', help=HelpMsg.TREE_NAME)
-    parser.add_argument('--report_path', help=HelpMsg.REPORT_PATH)
+    parser.add_argument('--report_path', type=str, default=None, help=HelpMsg.REPORT_PATH)
     parser.add_argument('--default_time', type=int, default=None, help=HelpMsg.DEFAULT_TIME)
     parser.add_argument('--random', action='store_true', help=HelpMsg.RANDOM)
     parser.add_argument('--seed', type=int, default=None, help=HelpMsg.SEED)
@@ -140,4 +140,5 @@ if __name__ == '__main__':
         )
         logger.info(log)
 
-    add_input_args_to_json_report(tree.full_report_path, COMMAND_LINE_ARGS, args.default_time, seed_val)
+    if args.report_path:
+        add_input_args_to_json_report(tree.full_report_path, COMMAND_LINE_ARGS, args.default_time, seed_val)

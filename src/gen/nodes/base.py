@@ -43,17 +43,11 @@ class AbstractNode(typing.Generic[T]):
 
     def get_nodes_count(self, type_constraint: type[T] | None = None) -> int:
         """Get count of nodes in current node."""
-        nodes_count = 0
-        for _ in self.sub_nodes_generator(recursive=False, type_constraint=type_constraint):
-            nodes_count += 1
-        return nodes_count
+        return sum(1 for _ in self.sub_nodes_generator(recursive=False, type_constraint=type_constraint))
 
     def get_all_nodes_count(self, type_constraint: type[T] | None = None) -> int:
         """Get count of nodes in current node and in the sub nodes."""
-        nodes_count = 0
-        for _ in self.sub_nodes_generator(recursive=True, type_constraint=type_constraint):
-            nodes_count += 1
-        return nodes_count
+        return sum(1 for _ in self.sub_nodes_generator(recursive=True, type_constraint=type_constraint))
 
 
 EMPTY_NODES: list[AbstractNode] = []
