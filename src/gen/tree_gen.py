@@ -244,7 +244,6 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
             chown(dir_path, own_uid, own_gid)
             chdir(START_PATH)
             logger.debug('Has been created directory: %s', _dir_path)
-            _dir_path.strip()
 
         def create_files_at_level(current_dir: Directory, fls_count: int | str, executor: ThreadPoolExecutor) -> None:
             """
@@ -300,10 +299,10 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                 dir_name = f'D{name_generator(self.name_length)}'
                 while dir_name in [dr.name for dr in current_dir.sub_dirs]:
                     dir_name = name_generator(self.name_length)
-                sub_directory = Directory(current_dir.full_path, dir_name, dir_owner, self.owners)
-                params_for_creating_dirs.append((sub_directory.full_path, sub_directory.owner))
+                directory = Directory(current_dir.full_path, dir_name, dir_owner, self.owners)
+                params_for_creating_dirs.append((directory.full_path, directory.owner))
 
-                current_dir.add_node(sub_directory)
+                current_dir.add_node(directory)
             # Workaround for ThreadPoolExecutor exception handling
             for _ in executor.map(lambda params: create_dir(*params), params_for_creating_dirs):
                 pass
@@ -392,7 +391,6 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                 root_dir = Directory(self.dest, self.name, start_dir_owner, self.owners)
                 if not path.exists(root_dir.full_path):
                     create_dir(root_dir.full_path, start_dir_owner)
-
                 create_level(root_dir, dirs_count, files_count, tread_executor)
                 current_dirs_level = root_dir.sub_dirs
 

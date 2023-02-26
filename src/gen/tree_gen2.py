@@ -1,8 +1,7 @@
 """File contains logic of file tree generating."""
-import subprocess
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
-from os import chdir, chown, path, utime
+from os import chdir, chown, mkdir, path, utime
 from random import choice, randint, sample
 from threading import Lock
 from time import mktime
@@ -178,8 +177,6 @@ class TreeGenerator2:  # pylint: disable=too-many-statements, too-many-instance-
         start_dir_owner = choice(self.get_owners())
         dirs_count = int(start_params['dirs_count'])
         files_count = int(start_params['files_count'])
-        logger.info('Start making files')
-        root_dir = Directory(self.dest, self.name, start_dir_owner, self.owners)
 
         def create_file(file_obj: File) -> None:
             """
@@ -219,16 +216,31 @@ class TreeGenerator2:  # pylint: disable=too-many-statements, too-many-instance-
                 logger.error('User %s was selected to create the file', file_obj.owner)
                 raise SystemExit(err) from SystemExit
 
-        def create_dirs(dirs: list[Directory]) -> None:
+        def create_dir(dir_path: str, owner: str) -> None:
             """
-            Create all dirs in the OS.
+            Create dir in the OS.
 
-            :param dirs:    list of Directory instances
+            :param dir_path:    path of directory
+            :param owner:       directory owner
             """
-            for directory in dirs:
-                subprocess.check_call(['mkdir', '-p', directory.full_path], shell=False)
-                own_uid, own_gid = get_user_ids(directory.owner)
-                chown(directory.full_path, own_uid, own_gid)
+            _dir_path = dir_path
+            list_of_dirs = []
+            if len(dir_path.split('/')) > 100:
+                dirs_list = dir_path.split('/')
+                dirs_list[0] = '/'
+
+                while len(dirs_list) > 50:
+                    list_of_dirs.append(path.join(*dirs_list[:50]))
+                    dirs_list = dirs_list[50:]
+                dir_path = path.join(*dirs_list)
+
+                for path_name in list_of_dirs:
+                    chdir(path_name)
+            mkdir(dir_path)
+            own_uid, own_gid = get_user_ids(owner)
+            chown(dir_path, own_uid, own_gid)
+            chdir(START_PATH)
+            logger.debug('Has been created directory: %s', _dir_path)
 
         def create_files_at_level(current_dir: Directory, fls_count: int | str) -> None:
             """
@@ -263,30 +275,41 @@ class TreeGenerator2:  # pylint: disable=too-many-statements, too-many-instance-
                         )
                     )
 
-        def create_dirs_at_level(current_dir: Directory, drs_count: int) -> None:
+        def create_dirs_at_level(current_dir: Directory, drs_count: int, executor: ThreadPoolExecutor) -> None:
             """
             Create dirs in the current directory.
 
             :param current_dir:    current working directory
             :param drs_count:      number of directories to create
+            :param executor:       ThreadPoolExecutor for dirs creating
             """
+            params_for_creating_dirs = []
             for _ in range(drs_count):
                 dir_owner = choice(self.get_owners())
 
                 dir_name = f'D{name_generator(self.name_length)}'
                 while dir_name in [dr.name for dr in current_dir.sub_dirs]:
                     dir_name = name_generator(self.name_length)
-                current_dir.add_node(Directory(current_dir.full_path, dir_name, dir_owner, self.owners))
+                directory = Directory(current_dir.full_path, dir_name, dir_owner, self.owners)
+                params_for_creating_dirs.append((directory.full_path, directory.owner))
 
-        def create_level(current_dir: Directory, count_of_dirs: int, count_of_files: int) -> None:
+                current_dir.add_node(directory)
+            # Workaround for ThreadPoolExecutor exception handling
+            for _ in executor.map(lambda params: create_dir(*params), params_for_creating_dirs):
+                pass
+
+        def create_level(
+            current_dir: Directory, count_of_dirs: int, count_of_files: int, tread_exec: ThreadPoolExecutor
+        ) -> None:
             """
             Create files and dirs in the current directory.
 
             :param current_dir:        current working directory
             :param count_of_dirs:      number of directories to create
             :param count_of_files:     number of files to create
+            :param tread_exec:         ThreadPoolExecutor for dirs creating
             """
-            create_dirs_at_level(current_dir, count_of_dirs)
+            create_dirs_at_level(current_dir, count_of_dirs, tread_exec)
             create_files_at_level(current_dir, count_of_files)
 
         def create_hard_links_in_tree(
@@ -354,32 +377,36 @@ class TreeGenerator2:  # pylint: disable=too-many-statements, too-many-instance-
                 pass
 
         try:
-            create_level(root_dir, dirs_count, files_count)
-            current_dirs_level = root_dir.sub_dirs
-
-            for _ in range(self.tree_depth - 1):
-                next_dirs_level = []
-
-                for sub_dir in current_dirs_level:
-                    nodes_count = self.get_node_counts()
-                    dirs_to_create_count = nodes_count['dirs_count']
-                    files_to_create_count = nodes_count['files_count']
-
-                    create_level(sub_dir, int(dirs_to_create_count), int(files_to_create_count))
-                    for sub_directory in sub_dir.sub_dirs:
-                        next_dirs_level.append(sub_directory)
-
-                current_dirs_level = next_dirs_level.copy()
-
-            for sub_dr in current_dirs_level:
-                nodes_count = self.get_node_counts()
-                files_to_create_count = nodes_count['files_count']
-                create_files_at_level(sub_dr, files_to_create_count)
-
-            create_dirs(root_dir.get_sub_dirs_with_empty_sub_dirs())
-
             with ThreadPoolExecutor(max_workers=10) as tread_executor:
-                for _ in tread_executor.map(create_file, root_dir.get_all_files()):
+                logger.info('Start making files')
+                root_dir = Directory(self.dest, self.name, start_dir_owner, self.owners)
+                if not path.exists(root_dir.full_path):
+                    create_dir(root_dir.full_path, start_dir_owner)
+                create_level(root_dir, dirs_count, files_count, tread_executor)
+                current_dirs_level = root_dir.sub_dirs
+
+                for _ in range(self.tree_depth - 1):
+                    next_dirs_level = []
+
+                    for sub_dir in current_dirs_level:
+                        nodes_count = self.get_node_counts()
+                        dirs_to_create_count = nodes_count['dirs_count']
+                        files_to_create_count = nodes_count['files_count']
+
+                        create_level(sub_dir, dirs_to_create_count, files_to_create_count, tread_executor)
+                        for sub_directory in sub_dir.sub_dirs:
+                            next_dirs_level.append(sub_directory)
+
+                    current_dirs_level = next_dirs_level.copy()
+
+                for sub_dr in current_dirs_level:
+                    nodes_count = self.get_node_counts()
+                    files_to_create_count = nodes_count['files_count']
+                    create_files_at_level(sub_dr, files_to_create_count)
+
+                for _ in tread_executor.map(
+                    create_file, root_dir.sub_nodes_generator(recursive=True, type_constraint=File)
+                ):
                     pass
 
                 create_hard_links_in_tree(
