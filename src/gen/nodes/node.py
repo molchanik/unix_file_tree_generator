@@ -319,3 +319,11 @@ class Directory(AbstractNode):  # pylint: disable=too-many-instance-attributes, 
         :return:    count of entries
         """
         return sum(1 for _ in self.sub_nodes_generator(recursive=True, type_constraint=None))
+
+    def get_sub_dirs_with_empty_sub_dirs(self) -> list[Directory]:
+        """Get all subdirectories with empty sub_dirs."""
+        nodes = []
+        for node in self.sub_nodes_generator(recursive=True, type_constraint=Directory):
+            if not node.sub_dirs:
+                nodes.append(node)
+        return nodes

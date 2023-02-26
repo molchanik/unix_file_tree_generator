@@ -40,7 +40,7 @@ if __name__ == '__main__':
     parser.add_argument('--random', action='store_true', help=HelpMsg.RANDOM)
     parser.add_argument('--seed', type=int, default=None, help=HelpMsg.SEED)
     parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS, help=HelpMsg.HELP)
-    parser.add_argument('-loglevel', default='info', help=HelpMsg.LOG_LEVEL)
+    parser.add_argument('--loglevel', default='info', help=HelpMsg.LOG_LEVEL)
 
     args = parser.parse_args()
     logger.setLevel(level=args.loglevel.upper())
