@@ -4,7 +4,7 @@ from os import path
 
 from gen.nodes.node import Directory
 from gen.utils.logger_util import logger
-from gen.utils.utilits import dataclass_to_dict
+from gen.utils.utilits import dataclass_to_dict, dir_to_dict
 
 
 class TreeReporter:
@@ -39,6 +39,7 @@ class JsonTreeReporter(TreeReporter):
 
         with open(self.full_report_path, 'w', encoding='utf-8') as file:
             tmp_dict = dataclass_to_dict(self.dir_obj)
+            # tmp_dict = dir_to_dict(self.dir_obj)
             json.dump(tmp_dict, file, indent=1, ensure_ascii=False)
             logger.info('Report on the generated file tree: %s', self.full_report_path)
 

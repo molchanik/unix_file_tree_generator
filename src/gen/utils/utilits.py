@@ -129,3 +129,46 @@ def dataclass_to_dict(obj, dict_factory=dict):  # noqa: ANN201
             (dataclass_to_dict(k, dict_factory), dataclass_to_dict(v, dict_factory)) for k, v in obj.items()
         )
     return copy.deepcopy(obj)
+
+
+def dir_to_dict(obj: Directory) -> dict:
+    """
+    Convert Directory class to dict recursively.
+
+    :param obj:             Directory instance
+    :return:                dictionary
+    """
+    result = {
+        "dest": obj.dest,
+        "name": obj.name,
+        "owner": obj.owner,
+        "possible_owners": obj.possible_owners,
+        "sub_dirs": [dir_to_dict(sub_dir) for sub_dir in obj.sub_dirs()],
+        "files": [{
+            "name": file_obj.name,
+            "dest": file_obj.dest,
+            "owner": file_obj.owner,
+            "size": file_obj.size,
+            "atime": file_obj.atime,
+            "mtime": file_obj.mtime
+        } for file_obj in obj.files()],
+        "hard_links": obj.hard_links(),
+        "symlinks": obj.symlinks(),
+        "total_files_count": obj.total_files_count(),
+        "current_dir_files_count": obj.current_dir_files_count(),
+        "sub_dirs_files_count": obj.sub_dirs_files_count(),
+        "total_sub_dirs_count": obj.total_sub_dirs_count(),
+        "sub_dirs_count": obj.sub_dirs_count(),
+        "total_hard_links_count": obj.total_hard_links_count(),
+        "total_symlinks_count": obj.total_symlinks_count(),
+        "current_dir_hard_links_count": obj.current_dir_hard_links_count(),
+        "current_dir_symlinks_count": obj.current_dir_symlinks_count(),
+        "sub_dirs_hard_links_count": obj.sub_dirs_hard_links_count(),
+        "sub_dirs_symlinks_count": obj.sub_dirs_symlinks_count(),
+        "total_size_all_files": obj.total_size_all_files(),
+        "total_file_size_in_dir": obj.total_file_size_in_dir(),
+        "sub_directories_files_size": obj.sub_directories_files_size(),
+        "total_entries": obj.total_entries(),
+        "metrics_by_owners": obj.metrics_by_owners()
+    }
+    return result
