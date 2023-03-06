@@ -1,6 +1,8 @@
 """File contains some help utils."""
+import concurrent
 import copy
 import string
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import fields
 from datetime import datetime, timedelta
 from os import chown, link, path, stat, symlink, utime
@@ -9,9 +11,8 @@ from random import choice, randint
 from threading import Lock
 from time import mktime
 
-from gen.nodes.node import Directory, SymLink
+from gen.nodes2.node2 import Directory, SymLink, File
 from gen.utils.logger_util import logger
-
 
 START_PATH = path.dirname(__file__)
 lock = Lock()
@@ -91,7 +92,7 @@ def make_symlink(src: str, sym_link: SymLink, owner: str, atime: datetime, mtime
             'dest': sym_link.file_obj.dest,
             'owner': sym_link.file_obj.owner,
         }
-    dst = sym_link.full_path
+    dst = sym_link.full_path()
     symlink(src, dst, target_is_directory=target_is_dir)
     # Workaround the size of the symlink needs to be increased by 2 bytes, a feature of FS
     sym_link.size = stat(dst, follow_symlinks=False).st_size + 2
@@ -131,27 +132,78 @@ def dataclass_to_dict(obj, dict_factory=dict):  # noqa: ANN201
     return copy.deepcopy(obj)
 
 
-def dir_to_dict(obj: Directory) -> dict:
+def dir_to_dict2(obj: Directory, new_result: dict = dict) -> dict:
     """
     Convert Directory class to dict recursively.
 
     :param obj:             Directory instance
+    :param new_result:      dict
     :return:                dictionary
     """
-    result = {
+    logger.debug('Start convert dir obj to dict.')
+    result = {}
+
+    logger.debug('Finish convert dir obj to dict.')
+    if obj.sub_nodes_generator(type_constraint=Directory):
+        result['sub_dirs'] = [
+            dir_to_dict2(sub_dir, new_result) for sub_dir in obj.sub_nodes_generator(type_constraint=Directory)]
+    result.update({
         "dest": obj.dest,
         "name": obj.name,
         "owner": obj.owner,
         "possible_owners": obj.possible_owners,
-        "sub_dirs": [dir_to_dict(sub_dir) for sub_dir in obj.sub_dirs()],
-        "files": [{
+        "files": [file_to_dict(file_obj) for file_obj in obj.sub_nodes_generator(type_constraint=File)],
+        "hard_links": obj.hard_links(),
+        "symlinks": obj.symlinks(),
+        "total_files_count": obj.total_files_count(),
+        "current_dir_files_count": obj.current_dir_files_count(),
+        "sub_dirs_files_count": obj.sub_dirs_files_count(),
+        "total_sub_dirs_count": obj.total_sub_dirs_count(),
+        "sub_dirs_count": obj.sub_dirs_count(),
+        "total_hard_links_count": obj.total_hard_links_count(),
+        "total_symlinks_count": obj.total_symlinks_count(),
+        "current_dir_hard_links_count": obj.current_dir_hard_links_count(),
+        "current_dir_symlinks_count": obj.current_dir_symlinks_count(),
+        "sub_dirs_hard_links_count": obj.sub_dirs_hard_links_count(),
+        "sub_dirs_symlinks_count": obj.sub_dirs_symlinks_count(),
+        "total_size_all_files": obj.total_size_all_files(),
+        "total_file_size_in_dir": obj.total_file_size_in_dir(),
+        "sub_directories_files_size": obj.sub_directories_files_size(),
+        "total_entries": obj.total_entries(),
+        "metrics_by_owners": obj.metrics_by_owners()
+    })
+    new_result = result
+    return new_result
+
+
+def file_to_dict(file_obj: File) -> dict:
+    """"""
+    return {
             "name": file_obj.name,
             "dest": file_obj.dest,
             "owner": file_obj.owner,
             "size": file_obj.size,
             "atime": file_obj.atime,
             "mtime": file_obj.mtime
-        } for file_obj in obj.files()],
+        }
+
+def dir_to_dict3(obj: Directory) -> dict:
+    """
+    Convert Directory class to dict recursively.
+
+    :param obj:             Directory instance
+    :return:                dictionary
+    """
+    logger.debug('Start convert dir obj to dict.')
+    # sub_dirs = obj.sub_dirs()
+    # files = obj.files()
+    result = {
+        "dest": obj.dest,
+        "name": obj.name,
+        "owner": obj.owner,
+        "possible_owners": obj.possible_owners,
+        "sub_dirs": [],
+        "files": [],
         "hard_links": obj.hard_links(),
         "symlinks": obj.symlinks(),
         "total_files_count": obj.total_files_count(),
@@ -171,4 +223,70 @@ def dir_to_dict(obj: Directory) -> dict:
         "total_entries": obj.total_entries(),
         "metrics_by_owners": obj.metrics_by_owners()
     }
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        sub_dirs_futures = {executor.submit(dir_to_dict3, sub_dir): sub_dir for sub_dir in obj.sub_nodes_generator(type_constraint=Directory)}
+        files_futures = {executor.submit(file_to_dict, file_obj): file_obj for file_obj in obj.files()}
+
+    sub_dirs = [future.result() for future in concurrent.futures.as_completed(sub_dirs_futures)]
+    files = [future.result() for future in concurrent.futures.as_completed(files_futures)]
+
+    result["sub_dirs"] = sub_dirs
+    result["files"] = files
+    logger.debug('Finish convert dir obj to dict.')
+    return result
+
+from typing import Dict
+def dir_to_dict(obj: Directory, cache: Dict[int, Dict]) -> Dict:
+    """
+    Convert Directory class to dict recursively.
+
+    :param obj:             Directory instance
+    :param cache:           dict to cache results
+    :return:                dictionary
+    """
+    obj_id = id(obj)
+    if obj_id in cache:
+        return cache[obj_id]
+
+    result = {
+        "dest": obj.dest,
+        "name": obj.name,
+        "owner": obj.owner,
+        "possible_owners": obj.possible_owners,
+        "hard_links": obj.hard_links(),
+        "symlinks": obj.symlinks(),
+        "total_files_count": obj.total_files_count(),
+        "current_dir_files_count": obj.current_dir_files_count(),
+        "sub_dirs_files_count": obj.sub_dirs_files_count(),
+        "total_sub_dirs_count": obj.total_sub_dirs_count(),
+        "sub_dirs_count": obj.sub_dirs_count(),
+        "total_hard_links_count": obj.total_hard_links_count(),
+        "total_symlinks_count": obj.total_symlinks_count(),
+        "current_dir_hard_links_count": obj.current_dir_hard_links_count(),
+        "current_dir_symlinks_count": obj.current_dir_symlinks_count(),
+        "sub_dirs_hard_links_count": obj.sub_dirs_hard_links_count(),
+        "sub_dirs_symlinks_count": obj.sub_dirs_symlinks_count(),
+        "total_size_all_files": obj.total_size_all_files(),
+        "total_file_size_in_dir": obj.total_file_size_in_dir(),
+        "sub_directories_files_size": obj.sub_directories_files_size(),
+        "total_entries": obj.total_entries(),
+        "metrics_by_owners": obj.metrics_by_owners(),
+    }
+
+    sub_dirs = obj.sub_nodes_generator(type_constraint=Directory)
+    if sub_dirs:
+        result["sub_dirs"] = [dir_to_dict(sub_dir, cache) for sub_dir in sub_dirs]
+
+    files = obj.files()
+    if files:
+        result["files"] = [{
+            "name": file_obj.name,
+            "dest": file_obj.dest,
+            "owner": file_obj.owner,
+            "size": file_obj.size,
+            "atime": file_obj.atime,
+            "mtime": file_obj.mtime
+        } for file_obj in files]
+
+    cache[obj_id] = result
     return result
