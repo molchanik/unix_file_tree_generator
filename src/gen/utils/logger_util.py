@@ -15,9 +15,9 @@ console = logging.StreamHandler(stream=sys.stdout)
 console.setLevel('DEBUG')
 console.setFormatter(logging.Formatter('[%(asctime)s] - [LINE:%(lineno)d] - %(levelname)s - %(message)s'))
 logger.addHandler(console)
-
-log_file = logging.FileHandler(global_log, encoding='utf-8')
-log_file.setLevel(logging.INFO)
-log_file.setFormatter(logging.Formatter(
-    u'[LINE:%(lineno)d]# %(levelname)-8s[%(asctime)s] %(message)s'))
-logger.addHandler(log_file)
+#
+# log_file = logging.FileHandler(global_log, encoding='utf-8')
+# log_file.setLevel(logging.INFO)
+# log_file.setFormatter(logging.Formatter(
+#     u'[LINE:%(lineno)d]# %(levelname)-8s[%(asctime)s] %(message)s'))
+# logger.addHandler(log_file)

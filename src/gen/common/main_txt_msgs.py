@@ -12,14 +12,14 @@ class HelpMsg:
     1: Strictly set the number of directories and files at
     each level of the tree.\n
     --dest ./ --tree_name Test_tree --tree_depth 3 --dirs_count 1 --files_count 1000
-    --hard_links_count 100 --owners root admin --file_sizes large medium small\n
+    --hard_links_count 100 --owners root admin --file_sizes large medium small --report_path ./\n
     2: Use the --random key and set the range of the number
     of directories and files per tree level.\n
     --dest /home/ --tree_name Test_tree --tree_depth 3
     --min_dirs_count 1 --max_dirs_count 1
     --min_files_count 999 --max_files_count 1000
     --hard_links_count 100 --random --owners root admin
-    --file_sizes large medium small\n
+    --file_sizes large medium small --report_path ./\n
     Optional: If you want to reproduce a previously created file tree, use the --default_time and
     --seed keys and values specified in the tree report.\n\nAttention!\n With a tree depth of more
     than 50 levels, creation of symlinks and hard links is impossible, because python is not able
