@@ -137,7 +137,6 @@ def dir_to_dict2(obj: Directory, new_result: dict = dict) -> dict:
     Convert Directory class to dict recursively.
 
     :param obj:             Directory instance
-    :param new_result:      dict
     :return:                dictionary
     """
     logger.debug('Start convert dir obj to dict.')
@@ -178,14 +177,19 @@ def dir_to_dict2(obj: Directory, new_result: dict = dict) -> dict:
 
 def file_to_dict(file_obj: File) -> dict:
     """"""
-    return {
-            "name": file_obj.name,
-            "dest": file_obj.dest,
-            "owner": file_obj.owner,
-            "size": file_obj.size,
-            "atime": file_obj.atime,
-            "mtime": file_obj.mtime
-        }
+    result = dict()
+    file_attrs = (
+        'dest',
+        'name',
+        'owner',
+        "size",
+        'atime',
+        'mtime'
+    )
+    for attr in file_attrs:
+        result.update({attr: str(getattr(file_obj, attr))})
+    return result
+
 
 def dir_to_dict3(obj: Directory) -> dict:
     """
@@ -224,7 +228,8 @@ def dir_to_dict3(obj: Directory) -> dict:
         "metrics_by_owners": obj.metrics_by_owners()
     }
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        sub_dirs_futures = {executor.submit(dir_to_dict3, sub_dir): sub_dir for sub_dir in obj.sub_nodes_generator(type_constraint=Directory)}
+        sub_dirs_futures = {executor.submit(dir_to_dict3, sub_dir): sub_dir for sub_dir in
+                            obj.sub_nodes_generator(type_constraint=Directory)}
         files_futures = {executor.submit(file_to_dict, file_obj): file_obj for file_obj in obj.files()}
 
     sub_dirs = [future.result() for future in concurrent.futures.as_completed(sub_dirs_futures)]
@@ -289,4 +294,45 @@ def dir_to_dict(obj: Directory, cache: Dict[int, Dict]) -> Dict:
         } for file_obj in files]
 
     cache[obj_id] = result
+    return result
+
+
+def dir_to_dict2(obj: Directory) -> dict:
+    """
+    Convert Directory class to dict recursively.
+
+    :param obj:             Directory instance
+    :return:                dictionary
+    """
+    attrs = (
+        'dest',
+        'name',
+        'owner',
+        'symlinks',
+        'hard_links',
+        "possible_owners",
+        "total_files_count",
+        "current_dir_files_count",
+        "sub_dirs_files_count",
+        "total_sub_dirs_count",
+        "sub_dirs_count",
+        "total_hard_links_count",
+        "total_symlinks_count",
+        "current_dir_hard_links_count",
+        "current_dir_symlinks_count",
+        "sub_dirs_hard_links_count",
+        "sub_dirs_symlinks_count",
+        "total_size_all_files",
+        "total_file_size_in_dir",
+        "sub_directories_files_size",
+        "total_entries",
+        "metrics_by_owners"
+    )
+    logger.debug('Start convert dir obj to dict.')
+    result = dict()
+    sub_dirs = [dir_to_dict2(sub_dir) for sub_dir in obj.sub_nodes_generator(type_constraint=Directory)]
+    result["files"] = [file_to_dict(file_obj) for file_obj in obj.sub_nodes_generator(type_constraint=File)]
+    result["sub_dirs"] = sub_dirs
+    for attr in attrs:
+        result.update({attr: getattr(obj, attr) if not callable(getattr(obj, attr)) else getattr(obj, attr)()})
     return result

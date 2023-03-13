@@ -50,8 +50,8 @@ class JsonTreeReporter(TreeReporter):
         with open(self.full_report_path, 'w', encoding='utf-8') as file:
             cache = {}
             logger.info('Start convert dir obj to dict.')
-            tmp_dict = dir_to_dict2(self.dir_obj, cache)
-            # tmp_dict = dir_to_dict3(self.dir_obj)
+            # tmp_dict = self.dir_obj.get_dir_as_dict()
+            tmp_dict = dir_to_dict2(self.dir_obj)
             logger.info('Finish convert dir obj to dict.')
             json.dump(tmp_dict, file, sort_keys=True, indent=2, ensure_ascii=False)
             logger.info('Report on the generated file tree: %s', self.full_report_path)

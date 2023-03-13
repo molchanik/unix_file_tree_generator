@@ -241,13 +241,12 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
             chdir(START_PATH)
             logger.debug('Has been created directory: %s', _dir_path)
 
-        def create_files_at_level(current_dir: Directory, fls_count: int | str, executor: ThreadPoolExecutor) -> None:
+        def create_files_at_level(current_dir: Directory, fls_count: int | str) -> None:
             """
             Create files in the current directory.
 
             :param current_dir:    current working directory
             :param fls_count:      number of files to create
-            :param executor:       ThreadPoolExecutor for files creating
             """
             if int(fls_count) != 0:
                 for _ in range(int(fls_count)):
@@ -256,7 +255,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
 
                     file_name = name_generator(self.name_length)
                     file_name = f'F{file_name}.{file_params["file_type"]}'
-                    while file_name in [fl.name for fl in current_dir.files()]:
+                    while file_name in [fl.name for fl in current_dir.files]:
                         file_params = self._gen_file_params()
                         file_name = name_generator(self.name_length)
                         file_name = f'F{file_name}.{file_params["file_type"]}'
@@ -309,7 +308,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
             :param tread_exec:         ThreadPoolExecutor for dirs creating
             """
             create_dirs_at_level(current_dir, count_of_dirs, tread_exec)
-            create_files_at_level(current_dir, count_of_files, tread_exec)
+            create_files_at_level(current_dir, count_of_files)
 
         def create_hard_links_in_tree(
             count: int, executor: ThreadPoolExecutor, dirs: list[Directory], files: list[File]
@@ -393,7 +392,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                         files_to_create_count = nodes_count['files_count']
 
                         create_level(sub_dir, int(dirs_to_create_count), int(files_to_create_count), tread_executor)
-                        for sub_directory in sub_dir.sub_dirs():
+                        for sub_directory in sub_dir.sub_dirs:
                             next_dirs_level.append(sub_directory)
 
                     current_dirs_level = next_dirs_level.copy()
@@ -401,7 +400,7 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                 for sub_dr in current_dirs_level:
                     nodes_count = self.get_node_counts()
                     files_to_create_count = nodes_count['files_count']
-                    create_files_at_level(sub_dr, files_to_create_count, tread_executor)
+                    create_files_at_level(sub_dr, files_to_create_count)
                 # Workaround for ThreadPoolExecutor exception handling
                 for _ in tread_executor.map(
                         create_file, root_dir.sub_nodes_generator(recursive=True, type_constraint=File)):
@@ -413,7 +412,6 @@ class TreeGenerator:  # pylint: disable=too-many-statements, too-many-instance-a
                     self.symlinks_count, tread_executor, root_dir.get_all_dirs(), root_dir.get_all_files()
                 )
                 logger.info('Creating files is done')
-                gc.collect()
                 if self.report_path:
                     JsonTreeReporter(self.report_path, f'{self.name}_report.json', root_dir).save_report2()
             return root_dir
